@@ -1,5 +1,7 @@
+*.vsix
 .claude
 .pi
 dist
 node_modules
 thoughts
+tsconfig.tsbuildinfo

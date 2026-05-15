@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import type { ThemeId, WebviewMessage } from '@doclume/core';
+import { THEMES, type ThemeId, type WebviewMessage } from '@doclume/core';
 
 function getNonce(): string {
   let text = '';
@@ -11,6 +11,13 @@ function getNonce(): string {
 }
 
 const EXPLICIT_THEMES: ThemeId[] = ['library', 'lamplight', 'manual', 'console', 'contrast'];
+
+/** Same language ids as built-in Markdown preview (incl. Cursor agent / prompt buffers). */
+const MARKDOWN_LIKE = /^(markdown|prompt|instructions|chatagent|skill)$/;
+
+function isMarkdownLikeDocument(document: vscode.TextDocument): boolean {
+  return MARKDOWN_LIKE.test(document.languageId) || document.fileName.toLowerCase().endsWith('.md');
+}
 
 function themeFromWorkbench(): ThemeId {
   const kind = vscode.window.activeColorTheme.kind;
@@ -77,13 +84,85 @@ function buildWebviewHtml(
 </html>`;
 }
 
+async function resolveMarkdownDocument(uri?: vscode.Uri): Promise<vscode.TextDocument | undefined> {
+  if (uri) {
+    try {
+      const doc = await vscode.workspace.openTextDocument(uri);
+      return isMarkdownLikeDocument(doc) ? doc : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) return undefined;
+  return isMarkdownLikeDocument(editor.document) ? editor.document : undefined;
+}
+
+type ThemeSetting = 'auto' | ThemeId;
+
+const THEME_CYCLE_ORDER: ThemeSetting[] = [
+  'auto',
+  'library',
+  'lamplight',
+  'manual',
+  'console',
+  'contrast',
+];
+
+function configurationUpdateTarget(): vscode.ConfigurationTarget {
+  return vscode.workspace.workspaceFolders?.length
+    ? vscode.ConfigurationTarget.Workspace
+    : vscode.ConfigurationTarget.Global;
+}
+
+async function selectDoclumeTheme(): Promise<void> {
+  type Item = vscode.QuickPickItem & { value: ThemeSetting };
+  const items: Item[] = [
+    {
+      label: '$(color-mode) Auto',
+      description: 'Manual in light · Console in dark',
+      value: 'auto',
+    },
+    ...THEMES.map(
+      (t): Item => ({
+        label: t.name,
+        description: t.description,
+        detail: t.use,
+        value: t.id,
+      }),
+    ),
+  ];
+  const picked = await vscode.window.showQuickPick<Item>(items, {
+    title: 'Doclume theme',
+    matchOnDescription: true,
+    matchOnDetail: true,
+  });
+  if (!picked) return;
+  await vscode.workspace
+    .getConfiguration('doclume')
+    .update('theme', picked.value, configurationUpdateTarget());
+}
+
+async function cycleDoclumeTheme(): Promise<void> {
+  const cfg = vscode.workspace.getConfiguration('doclume');
+  const raw = cfg.get<string>('theme');
+  const current: ThemeSetting =
+    raw !== undefined && raw !== null && THEME_CYCLE_ORDER.includes(raw as ThemeSetting)
+      ? (raw as ThemeSetting)
+      : 'auto';
+  const i = THEME_CYCLE_ORDER.indexOf(current);
+  const next = THEME_CYCLE_ORDER[(i + 1) % THEME_CYCLE_ORDER.length];
+  await cfg.update('theme', next, configurationUpdateTarget());
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
-    vscode.commands.registerCommand('doclume.openPreview', () => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor) return;
+    vscode.commands.registerCommand('doclume.selectTheme', selectDoclumeTheme),
+    vscode.commands.registerCommand('doclume.cycleTheme', cycleDoclumeTheme),
+    vscode.commands.registerCommand('doclume.openPreview', async (uri?: vscode.Uri) => {
+      const document = await resolveMarkdownDocument(uri);
+      if (!document) return;
 
-      const document = editor.document;
       const config = vscode.workspace.getConfiguration('doclume');
       const panel = vscode.window.createWebviewPanel(
         'doclumePreview',

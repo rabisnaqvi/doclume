@@ -38,7 +38,7 @@ importers:
         specifier: ^18.3.0
         version: 18.3.7(@types/react@18.3.28)
       '@types/vscode':
-        specifier: ^1.85.0
+        specifier: ^1.93.0
         version: 1.120.0
       '@vitejs/plugin-react':
         specifier: ^4.3.1
