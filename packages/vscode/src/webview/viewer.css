@@ -50,9 +50,7 @@ img { max-width: 100%; height: auto; display: block; }
 .vsc-viewer {
   position: relative;
   z-index: 1;
-  max-width: var(--reader-width);
-  margin: 0 auto;
-  padding: 48px 28px 80px;
+  padding: 28px 32px 80px;
 }
 
 .vsc-viewer__name {
