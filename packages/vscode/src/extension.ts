@@ -23,13 +23,20 @@ function buildWebviewHtml(
   const distDir = vscode.Uri.joinPath(extensionUri, 'dist', 'webview');
 
   // Find the built JS and CSS files
-  const distPath = distDir.fsPath;
-  const files = fs.readdirSync(distPath).filter((f) => f !== 'index.html');
-  const jsFile = files.find((f) => f.endsWith('.js'));
-  const cssFile = files.find((f) => f.endsWith('.css'));
+  const assetsDir = vscode.Uri.joinPath(distDir, 'assets');
+  let jsFile = '';
+  let cssFile = '';
+  
+  try {
+    const files = fs.readdirSync(assetsDir.fsPath);
+    jsFile = files.find((f) => f.endsWith('.js')) || '';
+    cssFile = files.find((f) => f.endsWith('.css')) || '';
+  } catch (e) {
+    console.error('Could not read assets directory:', e);
+  }
 
-  const jsUri = jsFile ? webview.asWebviewUri(vscode.Uri.joinPath(distDir, jsFile)) : '';
-  const cssUri = cssFile ? webview.asWebviewUri(vscode.Uri.joinPath(distDir, cssFile)) : '';
+  const jsUri = jsFile ? webview.asWebviewUri(vscode.Uri.joinPath(assetsDir, jsFile)) : '';
+  const cssUri = cssFile ? webview.asWebviewUri(vscode.Uri.joinPath(assetsDir, cssFile)) : '';
 
   return `<!DOCTYPE html>
 <html lang="en" data-theme="${theme}">
@@ -38,9 +45,9 @@ function buildWebviewHtml(
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'none';
-    style-src ${webview.cspSource} 'nonce-${nonce}';
-    script-src 'nonce-${nonce}';
-    font-src https://fonts.gstatic.com;
+    style-src ${webview.cspSource} 'nonce-${nonce}' 'unsafe-inline' https://fonts.googleapis.com;
+    script-src 'nonce-${nonce}' ${webview.cspSource} 'unsafe-eval';
+    font-src ${webview.cspSource} https://fonts.gstatic.com;
     img-src ${webview.cspSource} https: data:;
   ">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
