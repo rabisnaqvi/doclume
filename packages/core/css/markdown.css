@@ -1,0 +1,465 @@
+/* =========================================================================
+   Doclume markdown content styles — shared between web and vscode webview
+   ========================================================================= */
+
+.markdown { color: var(--text); }
+
+.markdown > :first-child { margin-top: 0; }
+.markdown > :last-child { margin-bottom: 0; }
+
+.markdown h1, .markdown h2, .markdown h3, .markdown h4, .markdown h5, .markdown h6 {
+  font-family: var(--body-font);
+  font-weight: var(--heading-weight);
+  letter-spacing: -0.015em;
+  line-height: 1.18;
+  color: var(--text);
+  scroll-margin-top: 80px;
+  margin: 2em 0 0.55em;
+}
+
+.markdown h1 {
+  font-size: clamp(2.1rem, 4vw, 2.7rem);
+  margin-top: 0.2em;
+  letter-spacing: -0.02em;
+}
+
+.markdown h2 {
+  font-size: clamp(1.55rem, 2.6vw, 1.85rem);
+  margin-top: 2.2em;
+  padding-top: 0.5em;
+  border-top: 1px solid var(--border-soft);
+}
+
+.markdown h3 { font-size: 1.32rem; }
+.markdown h4 { font-size: 1.12rem; color: var(--text-soft); }
+.markdown h5, .markdown h6 { font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--ui-font); }
+
+.markdown p {
+  margin: 0 0 var(--paragraph-spacing);
+  text-wrap: pretty;
+  hanging-punctuation: first last;
+}
+
+.markdown p:has(+ p) { margin-bottom: var(--paragraph-spacing); }
+
+.markdown strong { font-weight: 600; color: var(--text); }
+.markdown em { font-style: italic; }
+
+.markdown ul, .markdown ol {
+  margin: 0 0 var(--paragraph-spacing);
+  padding-left: 1.5em;
+}
+
+.markdown li { margin: 0.25em 0; }
+.markdown li::marker { color: var(--muted); }
+
+.markdown blockquote {
+  margin: 1.4em 0 var(--paragraph-spacing);
+  padding: 0.1em 0 0.1em 1.2em;
+  border-left: 3px solid var(--accent);
+  color: var(--text-soft);
+  font-style: italic;
+}
+
+.markdown blockquote p { margin-bottom: 0.6em; }
+.markdown blockquote p:last-child { margin-bottom: 0; }
+
+.markdown hr {
+  border: 0;
+  height: 1px;
+  background: var(--border);
+  margin: 2.2em auto;
+  width: 60%;
+  position: relative;
+}
+
+.markdown hr::after {
+  content: '◆';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg);
+  color: var(--muted-soft);
+  padding: 0 10px;
+  font-size: 10px;
+  font-family: var(--ui-font);
+}
+
+.markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 var(--paragraph-spacing);
+  font-family: var(--ui-font);
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.markdown thead { border-bottom: 1.5px solid var(--text); }
+.markdown th {
+  text-align: left;
+  padding: 8px 14px 8px 0;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.005em;
+}
+.markdown td {
+  padding: 8px 14px 8px 0;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text-soft);
+}
+.markdown tbody tr:last-child td { border-bottom: 0; }
+.markdown th:last-child, .markdown td:last-child { padding-right: 0; }
+
+.markdown img {
+  border-radius: 4px;
+  margin: 1.4em 0;
+  border: 1px solid var(--border-soft);
+}
+
+.markdown code {
+  font-family: var(--mono-font);
+  font-size: 0.86em;
+  font-feature-settings: 'liga' 0;
+}
+
+.markdown :not(pre) > code {
+  background: var(--surface-2);
+  padding: 0.12em 0.42em;
+  border-radius: 4px;
+  border: 1px solid var(--border-soft);
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.markdown pre {
+  margin: 1.4em 0 var(--paragraph-spacing);
+  padding: 18px 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  overflow-x: auto;
+  position: relative;
+  line-height: 1.62;
+}
+
+.markdown pre code {
+  display: block;
+  font-size: 13.5px;
+  color: var(--syn-plain);
+  white-space: pre;
+  background: transparent;
+  padding: 0;
+  border: 0;
+}
+
+/* Syntax highlight tokens */
+.markdown .hljs-comment, .markdown .hljs-quote { color: var(--syn-comment); font-style: italic; }
+.markdown .hljs-keyword, .markdown .hljs-selector-tag, .markdown .hljs-literal, .markdown .hljs-doctag, .markdown .hljs-name { color: var(--syn-keyword); }
+.markdown .hljs-string, .markdown .hljs-regexp, .markdown .hljs-addition { color: var(--syn-string); }
+.markdown .hljs-number, .markdown .hljs-symbol, .markdown .hljs-bullet, .markdown .hljs-meta, .markdown .hljs-link { color: var(--syn-number); }
+.markdown .hljs-title, .markdown .hljs-section, .markdown .hljs-selector-id { color: var(--syn-title); font-weight: 500; }
+.markdown .hljs-attr, .markdown .hljs-attribute { color: var(--syn-attr); }
+.markdown .hljs-built_in, .markdown .hljs-class .hljs-title, .markdown .hljs-template-variable, .markdown .hljs-type { color: var(--syn-meta); }
+.markdown .hljs-params { color: var(--syn-attr); }
+
+/* =========================================================================
+   Novel-theme specialization (library, lamplight)
+   ========================================================================= */
+
+html[data-theme='library'] .markdown h1,
+html[data-theme='lamplight'] .markdown h1 {
+  font-weight: 600;
+  font-style: italic;
+  text-align: left;
+  font-size: clamp(2.3rem, 4.6vw, 3rem);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.7em;
+}
+
+html[data-theme='library'] .markdown h1 + p::first-letter,
+html[data-theme='lamplight'] .markdown h1 + p::first-letter {
+  initial-letter: 2.5;
+  -webkit-initial-letter: 2.5;
+  font-weight: 600;
+  margin-right: 0.08em;
+  color: var(--accent);
+  font-style: normal;
+}
+
+html[data-theme='library'] .markdown h2,
+html[data-theme='lamplight'] .markdown h2 {
+  font-style: italic;
+  font-weight: 500;
+  border-top: 0;
+  padding-top: 0;
+  text-align: left;
+  letter-spacing: -0.01em;
+  margin-top: 2.4em;
+  position: relative;
+}
+
+html[data-theme='library'] .markdown h2::before,
+html[data-theme='lamplight'] .markdown h2::before {
+  content: '';
+  display: block;
+  width: 48px;
+  height: 1px;
+  background: var(--border);
+  margin-bottom: 0.9em;
+}
+
+html[data-theme='library'] .markdown h3,
+html[data-theme='lamplight'] .markdown h3 {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--text-soft);
+}
+
+html[data-theme='library'] .markdown blockquote,
+html[data-theme='lamplight'] .markdown blockquote {
+  border-left: 0;
+  padding: 1.2em 2em;
+  margin: 1.8em 0;
+  font-size: 1.05em;
+  font-style: italic;
+  color: var(--text-soft);
+  text-align: center;
+  position: relative;
+  font-family: var(--body-font);
+}
+
+html[data-theme='library'] .markdown blockquote::before,
+html[data-theme='lamplight'] .markdown blockquote::before {
+  content: '\201C';
+  position: absolute;
+  top: -0.1em;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--body-font);
+  font-style: italic;
+  font-size: 3em;
+  color: var(--accent);
+  line-height: 1;
+  opacity: 0.55;
+}
+
+html[data-theme='library'] .markdown blockquote p,
+html[data-theme='lamplight'] .markdown blockquote p {
+  margin: 0.4em 0;
+}
+
+html[data-theme='library'] .markdown hr,
+html[data-theme='lamplight'] .markdown hr {
+  width: 30%;
+  margin: 3em auto;
+  background: transparent;
+  border: 0;
+  height: 16px;
+  position: relative;
+}
+
+html[data-theme='library'] .markdown hr::after,
+html[data-theme='lamplight'] .markdown hr::after {
+  content: '\2767';
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  font-family: var(--body-font);
+  font-style: italic;
+}
+
+html[data-theme='library'] .markdown pre,
+html[data-theme='lamplight'] .markdown pre {
+  background: transparent;
+  border: 0;
+  border-left: 2px solid var(--border);
+  border-radius: 0;
+  padding: 0 0 0 18px;
+  font-size: 0.85em;
+}
+
+html[data-theme='library'] .markdown :not(pre) > code,
+html[data-theme='lamplight'] .markdown :not(pre) > code {
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  font-style: normal;
+  padding: 0 0.1em;
+  font-size: 0.85em;
+}
+
+html[data-theme='library'] .markdown table,
+html[data-theme='lamplight'] .markdown table {
+  font-family: var(--body-font);
+  font-size: 0.95em;
+}
+
+html[data-theme='library'] .markdown thead,
+html[data-theme='lamplight'] .markdown thead {
+  border-bottom-color: var(--border);
+  font-style: italic;
+}
+
+html[data-theme='library'] .markdown p,
+html[data-theme='lamplight'] .markdown p {
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  text-wrap: pretty;
+  hanging-punctuation: first last;
+}
+
+html[data-theme='library'] .markdown img,
+html[data-theme='lamplight'] .markdown img {
+  border: 0;
+  border-radius: 2px;
+  margin: 2em auto;
+  display: block;
+  max-width: 90%;
+}
+
+/* =========================================================================
+   Technical-theme specialization (manual, console)
+   ========================================================================= */
+
+html[data-theme='manual'] .markdown h1,
+html[data-theme='console'] .markdown h1 {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  font-size: clamp(1.9rem, 3.6vw, 2.3rem);
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid var(--border);
+}
+
+html[data-theme='manual'] .markdown h2,
+html[data-theme='console'] .markdown h2 {
+  font-weight: 600;
+  border-top: 0;
+  padding-top: 0;
+  font-size: clamp(1.35rem, 2.2vw, 1.55rem);
+  margin-top: 2.4em;
+  padding-bottom: 0.35em;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+html[data-theme='manual'] .markdown h3,
+html[data-theme='console'] .markdown h3 {
+  font-weight: 600;
+  font-size: 1.18rem;
+}
+
+html[data-theme='manual'] .markdown h4,
+html[data-theme='console'] .markdown h4 {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+html[data-theme='manual'] .markdown pre,
+html[data-theme='console'] .markdown pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  box-shadow: 0 1px 0 var(--border-soft);
+}
+
+html[data-theme='manual'] .markdown pre code,
+html[data-theme='console'] .markdown pre code {
+  font-size: 13.5px;
+}
+
+html[data-theme='manual'] .markdown :not(pre) > code,
+html[data-theme='console'] .markdown :not(pre) > code {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  font-weight: 500;
+  padding: 0.12em 0.5em;
+  font-size: 0.86em;
+  color: var(--syn-keyword);
+}
+
+html[data-theme='manual'] .markdown blockquote,
+html[data-theme='console'] .markdown blockquote {
+  background: var(--surface);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  padding: 12px 18px;
+  margin: 1.2em 0;
+  font-style: normal;
+  color: var(--text-soft);
+}
+
+html[data-theme='manual'] .markdown blockquote p,
+html[data-theme='console'] .markdown blockquote p {
+  margin: 0.4em 0;
+}
+
+html[data-theme='manual'] .markdown table,
+html[data-theme='console'] .markdown table {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 0.93em;
+}
+
+html[data-theme='manual'] .markdown thead,
+html[data-theme='console'] .markdown thead {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+html[data-theme='manual'] .markdown th,
+html[data-theme='console'] .markdown th {
+  padding: 8px 14px;
+  font-weight: 600;
+}
+
+html[data-theme='manual'] .markdown td,
+html[data-theme='console'] .markdown td {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+html[data-theme='manual'] .markdown tbody tr:last-child td,
+html[data-theme='console'] .markdown tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+html[data-theme='manual'] .markdown hr,
+html[data-theme='console'] .markdown hr {
+  width: 100%;
+  margin: 2em 0;
+  height: 1px;
+  background: var(--border);
+}
+
+html[data-theme='manual'] .markdown hr::after,
+html[data-theme='console'] .markdown hr::after {
+  content: '';
+  display: none;
+}
+
+html[data-theme='manual'] .markdown img,
+html[data-theme='console'] .markdown img {
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+}
+
+/* Search highlights */
+.markdown mark[data-search-hit] {
+  background: var(--search-hit-bg);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 0.08em;
+  margin: 0 -0.08em;
+  transition: background 100ms ease;
+}
+
+.markdown mark[data-search-hit-active='true'] {
+  background: var(--search-hit-active-bg);
+  color: var(--search-hit-active-fg);
+}

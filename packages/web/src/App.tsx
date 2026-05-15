@@ -1,87 +1,127 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react';
-import { marked, Renderer } from 'marked';
-import hljs from 'highlight.js';
-
-const THEMES = [
-  {
-    id: 'library',
-    name: 'Library',
-    description: 'Long reads · light',
-    use: 'Novel',
-    swatchBg: '#f3ead7',
-    swatchFg: '#1d160f',
-    swatchAccent: '#7a3a20',
-    fontPreview: '"Source Serif 4", serif',
-    letter: 'Aa',
-  },
-  {
-    id: 'lamplight',
-    name: 'Lamplight',
-    description: 'Long reads · dark',
-    use: 'Novel',
-    swatchBg: '#221c15',
-    swatchFg: '#ebdfc4',
-    swatchAccent: '#d49a4f',
-    fontPreview: '"Source Serif 4", serif',
-    letter: 'Aa',
-  },
-  {
-    id: 'manual',
-    name: 'Manual',
-    description: 'Spec / docs · light',
-    use: 'Technical',
-    swatchBg: '#ffffff',
-    swatchFg: '#0e1116',
-    swatchAccent: '#2266c4',
-    fontPreview: 'Inter, sans-serif',
-    letter: 'Aa',
-  },
-  {
-    id: 'console',
-    name: 'Console',
-    description: 'Spec / docs · dark',
-    use: 'Technical',
-    swatchBg: '#161b22',
-    swatchFg: '#d6dde6',
-    swatchAccent: '#58a6ff',
-    fontPreview: 'Inter, sans-serif',
-    letter: 'Aa',
-  },
-  {
-    id: 'contrast',
-    name: 'High Contrast',
-    description: 'Accessibility',
-    use: 'A11y',
-    swatchBg: '#000000',
-    swatchFg: '#ffffff',
-    swatchAccent: '#ffe14a',
-    fontPreview: 'Inter, sans-serif',
-    letter: 'Aa',
-  },
-];
+import { marked } from 'marked';
+import {
+  THEMES,
+  configureMarked,
+  escapeHtml,
+  extractToc,
+  estimateReadingTime,
+  type Theme,
+  type ThemeId,
+  type TocEntry,
+  type DocState,
+  type Prefs,
+} from '@doclume/core';
+import '@doclume/core/css/themes.css';
+import '@doclume/core/css/markdown.css';
 
 const PREFS_KEY = 'doclume-prefs-v1';
 const DOC_KEY = 'doclume-last-doc-v1';
 
+/* ---------- Persistence ---------- */
+
+function loadPrefs(): Prefs | null {
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    return raw ? (JSON.parse(raw) as Prefs) : null;
+  } catch (_) { return null; }
+}
+
+function savePrefs(prefs: Prefs): void {
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (_) {}
+}
+
+function loadLastDoc(): DocState | null {
+  try {
+    const raw = localStorage.getItem(DOC_KEY);
+    return raw ? (JSON.parse(raw) as DocState) : null;
+  } catch (_) { return null; }
+}
+
+function saveLastDoc(doc: DocState): void {
+  try { localStorage.setItem(DOC_KEY, JSON.stringify(doc)); } catch (_) {}
+}
+
+/* ---------- Search ---------- */
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function clearHighlights(root: Element): void {
+  if (!root) return;
+  root.querySelectorAll('mark[data-search-hit]').forEach((m) => {
+    const parent = m.parentNode!;
+    while (m.firstChild) parent.insertBefore(m.firstChild, m);
+    parent.removeChild(m);
+    (parent as Element).normalize();
+  });
+}
+
+function highlightMatches(root: Element, query: string): HTMLElement[] {
+  if (!root || !query) return [];
+  const matches: HTMLElement[] = [];
+  const re = new RegExp(escapeRegExp(query), 'gi');
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT;
+      let p = node.parentNode;
+      while (p && p !== root) {
+        if (['SCRIPT', 'STYLE', 'MARK'].includes((p as Element).nodeName)) return NodeFilter.FILTER_REJECT;
+        p = p.parentNode;
+      }
+      return re.test(node.nodeValue!) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    },
+  });
+
+  const candidates: Node[] = [];
+  let n: Node | null;
+  while ((n = walker.nextNode())) candidates.push(n);
+
+  candidates.forEach((node) => {
+    const text = node.nodeValue!;
+    const localRe = new RegExp(escapeRegExp(query), 'gi');
+    let lastIndex = 0;
+    let m: RegExpExecArray | null;
+    const frag = document.createDocumentFragment();
+    while ((m = localRe.exec(text)) !== null) {
+      if (m.index > lastIndex) frag.appendChild(document.createTextNode(text.slice(lastIndex, m.index)));
+      const mark = document.createElement('mark');
+      mark.dataset.searchHit = '';
+      mark.textContent = m[0];
+      frag.appendChild(mark);
+      matches.push(mark);
+      lastIndex = m.index + m[0].length;
+      if (m[0].length === 0) localRe.lastIndex++;
+    }
+    if (lastIndex < text.length) frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+    node.parentNode!.replaceChild(frag, node);
+  });
+
+  return matches;
+}
+
 /* ---------- Icons ---------- */
 
-function Icon({ name, size = 14 }) {
-  const paths = {
-    file: <><path d="M14 3v5h5" /><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9l7 7v9a2 2 0 0 1-2 2Z" /></>,
-    paste: <><rect x="8" y="2" width="8" height="4" rx="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /></>,
-    search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></>,
-    focus: <><path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /><circle cx="12" cy="12" r="3" /></>,
-    check: <path d="m4 12 5 5L20 6" />,
-    arrowUp: <path d="m6 14 6-6 6 6" />,
-    arrowDown: <path d="m6 10 6 6 6-6" />,
-    close: <><path d="M6 6 18 18" /><path d="m18 6-12 12" /></>,
-    book: <><path d="M4 19V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2Z" /><path d="M4 19a2 2 0 0 1 2-2h12" /></>,
-    clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
-    hash: <><path d="M4 9h16" /><path d="M4 15h16" /><path d="M10 3 8 21" /><path d="M16 3l-2 18" /></>,
-    type: <><path d="M4 7V5h16v2" /><path d="M9 19h6" /><path d="M12 5v14" /></>,
-    chevronLeft: <path d="m15 18-6-6 6-6" />,
-    chevronRight: <path d="m9 18 6-6-6-6" />,
-  };
+const iconPaths: Record<string, React.ReactNode> = {
+  file: <><path d="M14 3v5h5" /><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9l7 7v9a2 2 0 0 1-2 2Z" /></>,
+  paste: <><rect x="8" y="2" width="8" height="4" rx="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /></>,
+  search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></>,
+  focus: <><path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /><circle cx="12" cy="12" r="3" /></>,
+  check: <path d="m4 12 5 5L20 6" />,
+  arrowUp: <path d="m6 14 6-6 6 6" />,
+  arrowDown: <path d="m6 10 6 6 6-6" />,
+  close: <><path d="M6 6 18 18" /><path d="m18 6-12 12" /></>,
+  book: <><path d="M4 19V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2Z" /><path d="M4 19a2 2 0 0 1 2-2h12" /></>,
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  hash: <><path d="M4 9h16" /><path d="M4 15h16" /><path d="M10 3 8 21" /><path d="M16 3l-2 18" /></>,
+  type: <><path d="M4 7V5h16v2" /><path d="M9 19h6" /><path d="M12 5v14" /></>,
+  chevronLeft: <path d="m15 18-6-6 6-6" />,
+  chevronRight: <path d="m9 18 6-6-6-6" />,
+};
+
+function Icon({ name, size = 14 }: { name: string; size?: number }) {
   return (
     <svg
       width={size}
@@ -95,169 +135,31 @@ function Icon({ name, size = 14 }) {
       className="btn__icon"
       aria-hidden="true"
     >
-      {paths[name]}
+      {iconPaths[name]}
     </svg>
   );
 }
 
-/* ---------- Marked + highlight.js ---------- */
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-  ));
-}
-
-function configureMarked() {
-  marked.setOptions({ gfm: true, breaks: false });
-
-  const renderer = new Renderer();
-
-  const slugify = (text) =>
-    String(text).toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
-
-  renderer.heading = function (text, level, raw) {
-    const slug = slugify(raw);
-    return `<h${level} id="${slug}">${text}</h${level}>\n`;
-  };
-
-  renderer.code = function (code, lang) {
-    let highlighted = code;
-    if (lang && hljs.getLanguage(lang)) {
-      try { highlighted = hljs.highlight(code, { language: lang }).value; }
-      catch (_) { highlighted = hljs.highlightAuto(code).value; }
-    } else {
-      try { highlighted = hljs.highlightAuto(code).value; }
-      catch (_) { highlighted = escapeHtml(code); }
-    }
-    return `<pre><code class="hljs language-${lang || ''}">${highlighted}</code></pre>\n`;
-  };
-
-  marked.use({ renderer });
-}
-
-/* ---------- Persistence ---------- */
-
-function loadPrefs() {
-  try {
-    const raw = localStorage.getItem(PREFS_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch (_) { return null; }
-}
-
-function savePrefs(prefs) {
-  try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (_) {}
-}
-
-function loadLastDoc() {
-  try {
-    const raw = localStorage.getItem(DOC_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch (_) { return null; }
-}
-
-function saveLastDoc(doc) {
-  try { localStorage.setItem(DOC_KEY, JSON.stringify(doc)); } catch (_) {}
-}
-
-/* ---------- TOC ---------- */
-
-function extractToc(rootEl) {
-  if (!rootEl) return [];
-  return Array.from(rootEl.querySelectorAll('h1,h2,h3,h4,h5,h6')).map((h) => ({
-    id: h.id,
-    level: Number(h.tagName[1]),
-    text: h.textContent || '',
-  }));
-}
-
-/* ---------- Search ---------- */
-
-function escapeRegExp(s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function clearHighlights(root) {
-  if (!root) return;
-  root.querySelectorAll('mark[data-search-hit]').forEach((m) => {
-    const parent = m.parentNode;
-    while (m.firstChild) parent.insertBefore(m.firstChild, m);
-    parent.removeChild(m);
-    parent.normalize();
-  });
-}
-
-function highlightMatches(root, query) {
-  if (!root || !query) return [];
-  const matches = [];
-  const re = new RegExp(escapeRegExp(query), 'gi');
-
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode(node) {
-      if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT;
-      let p = node.parentNode;
-      while (p && p !== root) {
-        if (['SCRIPT', 'STYLE', 'MARK'].includes(p.nodeName)) return NodeFilter.FILTER_REJECT;
-        p = p.parentNode;
-      }
-      return re.test(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-    },
-  });
-
-  const candidates = [];
-  let n;
-  while ((n = walker.nextNode())) candidates.push(n);
-
-  candidates.forEach((node) => {
-    const text = node.nodeValue;
-    const localRe = new RegExp(escapeRegExp(query), 'gi');
-    let lastIndex = 0;
-    let m;
-    const frag = document.createDocumentFragment();
-    while ((m = localRe.exec(text)) !== null) {
-      if (m.index > lastIndex) frag.appendChild(document.createTextNode(text.slice(lastIndex, m.index)));
-      const mark = document.createElement('mark');
-      mark.dataset.searchHit = '';
-      mark.textContent = m[0];
-      frag.appendChild(mark);
-      matches.push(mark);
-      lastIndex = m.index + m[0].length;
-      if (m[0].length === 0) localRe.lastIndex++;
-    }
-    if (lastIndex < text.length) frag.appendChild(document.createTextNode(text.slice(lastIndex)));
-    node.parentNode.replaceChild(frag, node);
-  });
-
-  return matches;
-}
-
-/* ---------- Reading time ---------- */
-
-function estimateReadingTime(markdown) {
-  const words = (markdown || '').trim().split(/\s+/).filter(Boolean).length;
-  return { words, minutes: Math.max(1, Math.round(words / 220)) };
-}
-
 /* ---------- Theme switcher ---------- */
 
-function ThemeSwitcher({ theme, onChange }) {
+function ThemeSwitcher({ theme, onChange }: { theme: ThemeId; onChange: (id: ThemeId) => void }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const current = THEMES.find((t) => t.id === theme) ?? THEMES[0];
 
   const groups = useMemo(() => {
-    const m = new Map();
+    const m = new Map<string, Theme[]>();
     THEMES.forEach((t) => {
       if (!m.has(t.use)) m.set(t.use, []);
-      m.get(t.use).push(t);
+      m.get(t.use)!.push(t);
     });
     return Array.from(m.entries());
   }, []);
 
   useEffect(() => {
     if (!open) return;
-    const onDoc = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
-    const onEsc = (e) => { if (e.key === 'Escape') setOpen(false); };
+    const onDoc = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', onDoc);
     document.addEventListener('keydown', onEsc);
     return () => {
@@ -322,15 +224,32 @@ function ThemeSwitcher({ theme, onChange }) {
 
 /* ---------- Topbar ---------- */
 
+interface TopbarProps {
+  docName: string;
+  hasDocument: boolean;
+  theme: ThemeId;
+  onTheme: (id: ThemeId) => void;
+  onOpen: () => void;
+  onPaste: () => void;
+  searchQuery: string;
+  onSearchChange: (q: string) => void;
+  searchCount: number;
+  searchIndex: number;
+  onPrev: () => void;
+  onNext: () => void;
+  onFocus: () => void;
+  onHome: () => void;
+}
+
 function Topbar({
   docName, hasDocument, theme, onTheme, onOpen, onPaste,
   searchQuery, onSearchChange, searchCount, searchIndex, onPrev, onNext,
   onFocus, onHome,
-}) {
-  const searchRef = useRef(null);
+}: TopbarProps) {
+  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const onKey = (e) => {
+    const onKey = (e: KeyboardEvent) => {
       if (!hasDocument) return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
         e.preventDefault();
@@ -370,7 +289,7 @@ function Topbar({
               onChange={(e) => onSearchChange(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') { e.preventDefault(); e.shiftKey ? onPrev() : onNext(); }
-                if (e.key === 'Escape') { e.target.blur(); onSearchChange(''); }
+                if (e.key === 'Escape') { e.currentTarget.blur(); onSearchChange(''); }
               }}
             />
             {searchQuery && (
@@ -406,17 +325,22 @@ function Topbar({
 
 /* ---------- Sidebar TOC ---------- */
 
-function Sidebar({ toc, activeId, onJump, onCollapse }) {
+interface SidebarProps {
+  toc: TocEntry[];
+  activeId: string;
+  onJump: (id: string) => void;
+  onCollapse: () => void;
+}
+
+function Sidebar({ toc, activeId, onJump, onCollapse }: SidebarProps) {
   if (!toc.length) return null;
   return (
     <aside className="sidebar" aria-label="Table of contents">
       <div className="sidebar__head">
         <p className="sidebar__eyebrow">Contents</p>
-        {onCollapse && (
-          <button type="button" className="sidebar__collapse" onClick={onCollapse} title="Hide contents" aria-label="Hide contents">
-            <Icon name="chevronLeft" size={14} />
-          </button>
-        )}
+        <button type="button" className="sidebar__collapse" onClick={onCollapse} title="Hide contents" aria-label="Hide contents">
+          <Icon name="chevronLeft" size={14} />
+        </button>
       </div>
       <ul className="toc">
         {toc.map((item) => (
@@ -436,7 +360,7 @@ function Sidebar({ toc, activeId, onJump, onCollapse }) {
   );
 }
 
-function SidebarRail({ onExpand }) {
+function SidebarRail({ onExpand }: { onExpand: () => void }) {
   return (
     <button type="button" className="sidebar-rail" onClick={onExpand} title="Show contents" aria-label="Show contents">
       <Icon name="chevronRight" size={14} />
@@ -447,7 +371,7 @@ function SidebarRail({ onExpand }) {
 
 /* ---------- Right rail ---------- */
 
-function Rail({ stats, theme }) {
+function Rail({ stats, theme }: { stats: { words: number; minutes: number; headings: number }; theme: ThemeId }) {
   const themeMeta = THEMES.find((t) => t.id === theme) ?? THEMES[0];
   return (
     <aside className="rail" aria-label="Document info">
@@ -479,7 +403,7 @@ function Rail({ stats, theme }) {
 
 /* ---------- Empty state ---------- */
 
-function EmptyState({ onOpen, onPaste, onSample }) {
+function EmptyState({ onOpen, onPaste, onSample }: { onOpen: () => void; onPaste: () => void; onSample: () => void }) {
   return (
     <div className="empty">
       <div className="empty__card">
@@ -510,9 +434,9 @@ function EmptyState({ onOpen, onPaste, onSample }) {
 
 /* ---------- Paste modal ---------- */
 
-function PasteModal({ open, onClose, onRender }) {
+function PasteModal({ open, onClose, onRender }: { open: boolean; onClose: () => void; onRender: (text: string) => void }) {
   const [text, setText] = useState('');
-  const ref = useRef(null);
+  const ref = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (open) setTimeout(() => ref.current?.focus(), 60);
@@ -521,7 +445,7 @@ function PasteModal({ open, onClose, onRender }) {
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e) => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); onRender(text); }
     };
@@ -567,8 +491,8 @@ function PasteModal({ open, onClose, onRender }) {
 /* ---------- App ---------- */
 
 export function App() {
-  const [doc, setDoc] = useState({ markdown: '', name: '' });
-  const [theme, setTheme] = useState('library');
+  const [doc, setDoc] = useState<DocState>({ markdown: '', name: '' });
+  const [theme, setTheme] = useState<ThemeId>('library');
   const [focusMode, setFocusMode] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -577,47 +501,44 @@ export function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchCount, setSearchCount] = useState(0);
   const [searchIndex, setSearchIndex] = useState(-1);
-  const searchMatchesRef = useRef([]);
+  const searchMatchesRef = useRef<HTMLElement[]>([]);
 
-  const [toc, setToc] = useState([]);
+  const [toc, setToc] = useState<TocEntry[]>([]);
   const [activeId, setActiveId] = useState('');
-  const contentRef = useRef(null);
-  const fileInputRef = useRef(null);
+  const contentRef = useRef<HTMLElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Restore prefs + last doc on mount
   useEffect(() => {
     configureMarked();
     const prefs = loadPrefs();
     if (prefs?.theme) {
-      const migrate = { paper: 'library', ivory: 'manual', dusk: 'lamplight', carbon: 'console' };
+      const migrate: Record<string, ThemeId> = { paper: 'library', ivory: 'manual', dusk: 'lamplight', carbon: 'console' };
       const mapped = migrate[prefs.theme] ?? prefs.theme;
       const valid = THEMES.find((t) => t.id === mapped);
-      setTheme(valid ? mapped : 'library');
+      setTheme(valid ? (mapped as ThemeId) : 'library');
     }
     if (typeof prefs?.sidebarCollapsed === 'boolean') setSidebarCollapsed(prefs.sidebarCollapsed);
     const last = loadLastDoc();
-    if (last?.markdown) setDoc({ markdown: last.markdown, name: last.name || '' });
+    if (last?.markdown) setDoc({ markdown: last.markdown, name: last.name ?? '' });
   }, []);
 
-  // Sync theme to <html data-theme> + persist
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    const prefs = loadPrefs() ?? {};
+    const prefs = loadPrefs() ?? ({} as Prefs);
     savePrefs({ ...prefs, theme, sidebarCollapsed });
   }, [theme, sidebarCollapsed]);
 
   const renderedHtml = useMemo(() => {
     if (!doc.markdown) return '';
-    try { return marked.parse(doc.markdown); }
-    catch (e) { return `<p style="color:var(--muted)">Could not render markdown: ${escapeHtml(e.message)}</p>`; }
+    try { return marked.parse(doc.markdown) as string; }
+    catch (e) { return `<p style="color:var(--muted)">Could not render markdown: ${escapeHtml((e as Error).message)}</p>`; }
   }, [doc.markdown]);
 
-  // After render: rebuild TOC, clear stale search, persist doc
   useLayoutEffect(() => {
     if (!contentRef.current) return;
     const newToc = extractToc(contentRef.current);
     setToc(newToc);
-    setActiveId(newToc[0]?.id || '');
+    setActiveId(newToc[0]?.id ?? '');
     clearHighlights(contentRef.current);
     searchMatchesRef.current = [];
     setSearchCount(0);
@@ -626,7 +547,6 @@ export function App() {
     if (doc.markdown) saveLastDoc(doc);
   }, [renderedHtml]);
 
-  // Highlight search matches
   useEffect(() => {
     if (!contentRef.current) return;
     clearHighlights(contentRef.current);
@@ -634,7 +554,7 @@ export function App() {
     const q = searchQuery.trim();
     if (!q) { setSearchCount(0); setSearchIndex(-1); return; }
     const handle = setTimeout(() => {
-      const matches = highlightMatches(contentRef.current, q);
+      const matches = highlightMatches(contentRef.current!, q);
       searchMatchesRef.current = matches;
       setSearchCount(matches.length);
       setSearchIndex(matches.length ? 0 : -1);
@@ -642,7 +562,6 @@ export function App() {
     return () => clearTimeout(handle);
   }, [searchQuery, renderedHtml]);
 
-  // Scroll to active search match
   useEffect(() => {
     const matches = searchMatchesRef.current;
     matches.forEach((m, i) => {
@@ -656,28 +575,27 @@ export function App() {
     }
   }, [searchIndex]);
 
-  // Active TOC tracking
   useEffect(() => {
     if (!contentRef.current || !toc.length) return;
     const headingEls = toc
-      .map((h) => contentRef.current.querySelector(`#${CSS.escape(h.id)}`))
-      .filter(Boolean);
+      .map((h) => contentRef.current!.querySelector(`#${CSS.escape(h.id)}`))
+      .filter(Boolean) as Element[];
 
-    const visible = new Map();
+    const visible = new Map<string, number>();
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((e) => {
         if (e.isIntersecting) visible.set(e.target.id, e.intersectionRatio);
         else visible.delete(e.target.id);
       });
-      let best = null, bestTop = Infinity;
+      let best: string | null = null, bestTop = Infinity;
       visible.forEach((_, id) => {
-        const el = contentRef.current.querySelector(`#${CSS.escape(id)}`);
+        const el = contentRef.current!.querySelector(`#${CSS.escape(id)}`);
         if (!el) return;
         const top = el.getBoundingClientRect().top;
         if (top < bestTop) { bestTop = top; best = id; }
       });
       if (best) { setActiveId(best); return; }
-      let cand = toc[0]?.id || '', candTop = -Infinity;
+      let cand = toc[0]?.id ?? '', candTop = -Infinity;
       headingEls.forEach((el) => {
         const top = el.getBoundingClientRect().top;
         if (top < 120 && top > candTop) { candTop = top; cand = el.id; }
@@ -689,9 +607,8 @@ export function App() {
     return () => observer.disconnect();
   }, [toc]);
 
-  // Keyboard shortcuts
   useEffect(() => {
-    const onKey = (e) => {
+    const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'o') {
         e.preventDefault();
         fileInputRef.current?.click();
@@ -706,13 +623,12 @@ export function App() {
     return () => document.removeEventListener('keydown', onKey);
   }, [focusMode]);
 
-  // File drag-and-drop
   useEffect(() => {
     let counter = 0;
-    const onDragEnter = (e) => { e.preventDefault(); counter++; if (e.dataTransfer?.types?.includes('Files')) setDragActive(true); };
-    const onDragLeave = (e) => { e.preventDefault(); if (--counter <= 0) { setDragActive(false); counter = 0; } };
-    const onDragOver = (e) => e.preventDefault();
-    const onDrop = (e) => { e.preventDefault(); setDragActive(false); counter = 0; const f = e.dataTransfer?.files?.[0]; if (f) readFile(f); };
+    const onDragEnter = (e: DragEvent) => { e.preventDefault(); counter++; if (e.dataTransfer?.types?.includes('Files')) setDragActive(true); };
+    const onDragLeave = (e: DragEvent) => { e.preventDefault(); if (--counter <= 0) { setDragActive(false); counter = 0; } };
+    const onDragOver = (e: DragEvent) => e.preventDefault();
+    const onDrop = (e: DragEvent) => { e.preventDefault(); setDragActive(false); counter = 0; const f = e.dataTransfer?.files?.[0]; if (f) readFile(f); };
     window.addEventListener('dragenter', onDragEnter);
     window.addEventListener('dragleave', onDragLeave);
     window.addEventListener('dragover', onDragOver);
@@ -727,7 +643,7 @@ export function App() {
 
   useEffect(() => { document.body.classList.toggle('is-focus', focusMode); }, [focusMode]);
 
-  const readFile = useCallback(async (file) => {
+  const readFile = useCallback(async (file: File) => {
     try { setDoc({ markdown: await file.text(), name: file.name }); }
     catch (err) { console.error('Failed to read file', err); }
   }, []);
@@ -749,13 +665,13 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'auto' });
   }, []);
 
-  const renderPasted = useCallback((text) => {
+  const renderPasted = useCallback((text: string) => {
     if (!text.trim()) return;
     setDoc({ markdown: text, name: 'Pasted markdown' });
     setPasteOpen(false);
   }, []);
 
-  const jumpToHeading = useCallback((id) => {
+  const jumpToHeading = useCallback((id: string) => {
     const el = contentRef.current?.querySelector(`#${CSS.escape(id)}`);
     if (!el) return;
     window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top - 76, behavior: 'smooth' });

@@ -1,20 +1,17 @@
 {
-  "name": "doclume",
-  "version": "1.0.0",
-  "type": "module",
+  "name": "doclume-monorepo",
+  "private": true,
+  "version": "0.0.0",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "highlight.js": "^11.9.0",
-    "marked": "^12.0.2",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "dev": "pnpm --filter @doclume/web dev",
+    "build": "pnpm --filter @doclume/core build && pnpm --filter @doclume/web build && pnpm --filter doclume build",
+    "build:core": "pnpm --filter @doclume/core build",
+    "build:web": "pnpm --filter @doclume/web build",
+    "build:ext": "pnpm --filter doclume build",
+    "package:ext": "pnpm --filter doclume package",
+    "typecheck": "tsc --build"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.1",
-    "vite": "^5.4.0"
+    "typescript": "^5.5.3"
   }
 }

@@ -1,0 +1,229 @@
+/* =========================================================================
+   Doclume theme tokens — imported by both web and vscode webview
+   ========================================================================= */
+
+/* ─── LIBRARY ─── Novel reading, light */
+:root,
+html[data-theme='library'] {
+  color-scheme: light;
+  --bg: #efe5cf;
+  --bg-tint: #f3ead7;
+  --surface: #f8f0db;
+  --surface-2: #ebe0c5;
+  --surface-3: #ddcfae;
+  --text: #1d160f;
+  --text-soft: #382c1f;
+  --muted: #7d6a4f;
+  --muted-soft: #aa9874;
+  --border: #d3c1a0;
+  --border-soft: #e2d3b4;
+  --accent: #7a3a20;
+  --accent-soft: rgba(122, 58, 32, 0.10);
+  --accent-contrast: #fbf3df;
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 22px 56px -18px rgba(80, 50, 20, 0.20), 0 4px 12px -4px rgba(80, 50, 20, 0.10);
+  --ui-font: 'Inter', system-ui, sans-serif;
+  --body-font: 'Source Serif 4', 'Iowan Old Style', 'Cambria', Georgia, serif;
+  --mono-font: 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+  --reader-width: 56ch;
+  --font-size: 20px;
+  --line-height: 1.82;
+  --letter-spacing: 0;
+  --paragraph-spacing: 1.25em;
+  --heading-weight: 600;
+  --body-weight: 400;
+  --search-hit-bg: rgba(180, 120, 40, 0.30);
+  --search-hit-active-bg: #b97a20;
+  --search-hit-active-fg: #fbf3df;
+  --syn-plain: #1d160f;
+  --syn-comment: #998260;
+  --syn-keyword: #8a3a18;
+  --syn-string: #5a6b30;
+  --syn-number: #8a5a1f;
+  --syn-title: #2a5a8a;
+  --syn-attr: #4a6a3a;
+  --syn-meta: #8a3a5a;
+  --texture-opacity: 0.6;
+  --code-prominence: 0;
+  --novel: 1;
+  --technical: 0;
+}
+
+/* ─── LAMPLIGHT ─── Novel reading, dark */
+html[data-theme='lamplight'] {
+  color-scheme: dark;
+  --bg: #181410;
+  --bg-tint: #1f1a14;
+  --surface: #221c15;
+  --surface-2: #2b241a;
+  --surface-3: #3a3022;
+  --text: #ebdfc4;
+  --text-soft: #d6c8a7;
+  --muted: #998562;
+  --muted-soft: #756849;
+  --border: #3e3525;
+  --border-soft: #2e2718;
+  --accent: #d49a4f;
+  --accent-soft: rgba(212, 154, 79, 0.14);
+  --accent-contrast: #181410;
+  --shadow: 0 24px 56px -16px rgba(0, 0, 0, 0.55), 0 4px 12px -2px rgba(0, 0, 0, 0.35);
+  --ui-font: 'Inter', system-ui, sans-serif;
+  --body-font: 'Source Serif 4', 'Iowan Old Style', Georgia, serif;
+  --mono-font: 'JetBrains Mono', monospace;
+  --reader-width: 56ch;
+  --font-size: 20px;
+  --line-height: 1.82;
+  --letter-spacing: 0;
+  --paragraph-spacing: 1.25em;
+  --heading-weight: 600;
+  --body-weight: 400;
+  --search-hit-bg: rgba(212, 154, 79, 0.30);
+  --search-hit-active-bg: #d49a4f;
+  --search-hit-active-fg: #181410;
+  --syn-plain: #ebdfc4;
+  --syn-comment: #8a7a5e;
+  --syn-keyword: #d49a4f;
+  --syn-string: #b8c97f;
+  --syn-number: #e6b870;
+  --syn-title: #c3b3e0;
+  --syn-attr: #9dd4b5;
+  --syn-meta: #e09a8a;
+  --texture-opacity: 0.45;
+  --code-prominence: 0;
+  --novel: 1;
+  --technical: 0;
+}
+
+/* ─── MANUAL ─── Technical docs, light */
+html[data-theme='manual'] {
+  color-scheme: light;
+  --bg: #f6f7f5;
+  --bg-tint: #fafaf8;
+  --surface: #ffffff;
+  --surface-2: #f0f1ee;
+  --surface-3: #e3e5e0;
+  --text: #0e1116;
+  --text-soft: #2a2f37;
+  --muted: #6a7280;
+  --muted-soft: #a3acb8;
+  --border: #dfe2dc;
+  --border-soft: #ebede8;
+  --accent: #2266c4;
+  --accent-soft: rgba(34, 102, 196, 0.10);
+  --accent-contrast: #ffffff;
+  --shadow: 0 24px 56px -20px rgba(20, 30, 50, 0.10), 0 2px 6px -2px rgba(20, 30, 50, 0.06);
+  --ui-font: 'Inter', system-ui, sans-serif;
+  --body-font: 'Inter', system-ui, sans-serif;
+  --mono-font: 'JetBrains Mono', monospace;
+  --reader-width: 76ch;
+  --font-size: 16px;
+  --line-height: 1.62;
+  --letter-spacing: -0.005em;
+  --paragraph-spacing: 1em;
+  --heading-weight: 600;
+  --body-weight: 400;
+  --search-hit-bg: rgba(34, 102, 196, 0.18);
+  --search-hit-active-bg: #2266c4;
+  --search-hit-active-fg: #ffffff;
+  --syn-plain: #0e1116;
+  --syn-comment: #6a7280;
+  --syn-keyword: #c0185c;
+  --syn-string: #1f7a3a;
+  --syn-number: #8230d0;
+  --syn-title: #1d4ed8;
+  --syn-attr: #0e7490;
+  --syn-meta: #b54708;
+  --texture-opacity: 0;
+  --code-prominence: 1;
+  --novel: 0;
+  --technical: 1;
+}
+
+/* ─── CONSOLE ─── Technical docs, dark */
+html[data-theme='console'] {
+  color-scheme: dark;
+  --bg: #0d1117;
+  --bg-tint: #0f141b;
+  --surface: #161b22;
+  --surface-2: #1c232d;
+  --surface-3: #232b38;
+  --text: #d6dde6;
+  --text-soft: #b8c1cb;
+  --muted: #7b8794;
+  --muted-soft: #545d68;
+  --border: #2a313c;
+  --border-soft: #1e242e;
+  --accent: #58a6ff;
+  --accent-soft: rgba(88, 166, 255, 0.14);
+  --accent-contrast: #0d1117;
+  --shadow: 0 24px 56px -16px rgba(0, 0, 0, 0.65), 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+  --ui-font: 'Inter', system-ui, sans-serif;
+  --body-font: 'Inter', system-ui, sans-serif;
+  --mono-font: 'JetBrains Mono', monospace;
+  --reader-width: 76ch;
+  --font-size: 16px;
+  --line-height: 1.62;
+  --letter-spacing: -0.005em;
+  --paragraph-spacing: 1em;
+  --heading-weight: 600;
+  --body-weight: 400;
+  --search-hit-bg: rgba(88, 166, 255, 0.24);
+  --search-hit-active-bg: #58a6ff;
+  --search-hit-active-fg: #0d1117;
+  --syn-plain: #d6dde6;
+  --syn-comment: #6a7585;
+  --syn-keyword: #ff7b9d;
+  --syn-string: #a5d6a7;
+  --syn-number: #ffa657;
+  --syn-title: #79c0ff;
+  --syn-attr: #56d4dd;
+  --syn-meta: #d2a8ff;
+  --texture-opacity: 0;
+  --code-prominence: 1;
+  --novel: 0;
+  --technical: 1;
+}
+
+/* ─── HIGH CONTRAST ─── Accessibility */
+html[data-theme='contrast'] {
+  color-scheme: dark;
+  --bg: #000000;
+  --bg-tint: #000000;
+  --surface: #0a0a0a;
+  --surface-2: #161616;
+  --surface-3: #262626;
+  --text: #ffffff;
+  --text-soft: #f0f0f0;
+  --muted: #cfcfcf;
+  --muted-soft: #888888;
+  --border: #5c5c5c;
+  --border-soft: #3a3a3a;
+  --accent: #ffe14a;
+  --accent-soft: rgba(255, 225, 74, 0.14);
+  --accent-contrast: #000000;
+  --shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+  --ui-font: 'Inter', system-ui, sans-serif;
+  --body-font: 'Inter', system-ui, sans-serif;
+  --mono-font: 'JetBrains Mono', monospace;
+  --reader-width: 62ch;
+  --font-size: 19px;
+  --line-height: 1.78;
+  --letter-spacing: 0;
+  --paragraph-spacing: 1.2em;
+  --heading-weight: 700;
+  --body-weight: 400;
+  --search-hit-bg: #ffe14a;
+  --search-hit-active-bg: #00f0ff;
+  --search-hit-active-fg: #000000;
+  --syn-plain: #ffffff;
+  --syn-comment: #cfcfcf;
+  --syn-keyword: #ffe14a;
+  --syn-string: #7fff7f;
+  --syn-number: #ffae3f;
+  --syn-title: #00f0ff;
+  --syn-attr: #7fdbca;
+  --syn-meta: #ff7fc0;
+  --texture-opacity: 0;
+  --code-prominence: 1;
+  --novel: 0;
+  --technical: 1;
+}

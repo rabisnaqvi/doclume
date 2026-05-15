@@ -1,0 +1,21 @@
+{
+  "name": "@doclume/core",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./css/themes.css": "./css/themes.css",
+    "./css/markdown.css": "./css/markdown.css"
+  },
+  "scripts": {
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "highlight.js": "^11.9.0",
+    "marked": "^12.0.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.3"
+  }
+}

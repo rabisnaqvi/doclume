@@ -1,0 +1,82 @@
+/* Doclume VS Code webview — focus-mode layout */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body-font);
+  font-size: var(--font-size);
+  line-height: var(--line-height);
+  letter-spacing: var(--letter-spacing);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Paper grain — only visible on library/lamplight */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--texture-opacity);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.55  0 0 0 0 0.45  0 0 0 0 0.30  0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  z-index: 0;
+  mix-blend-mode: multiply;
+}
+
+html[data-theme='lamplight'] body::before { mix-blend-mode: screen; }
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
+}
+
+a:hover { border-bottom-color: var(--accent); background: var(--accent-soft); }
+
+img { max-width: 100%; height: auto; display: block; }
+
+::selection { background: var(--accent-soft); color: var(--text); }
+
+.vsc-viewer {
+  position: relative;
+  z-index: 1;
+  max-width: var(--reader-width);
+  margin: 0 auto;
+  padding: 48px 28px 80px;
+}
+
+.vsc-viewer__name {
+  font-family: var(--ui-font);
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 28px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.vsc-empty {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 32px;
+  font-family: var(--ui-font);
+  font-size: 14px;
+  color: var(--muted);
+  text-align: center;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; border: 2px solid var(--bg); background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted-soft); border: 2px solid var(--bg); background-clip: content-box; }
