@@ -31,6 +31,25 @@ function savePrefs(prefs: Prefs): void {
   try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (_) {}
 }
 
+/** First visit / no saved theme: follow browser light (library) vs dark (lamplight). */
+function preferredThemeFromBrowserScheme(): ThemeId {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'library';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'lamplight' : 'library';
+}
+
+function readStoredTheme(): ThemeId | null {
+  try {
+    const prefs = loadPrefs();
+    if (!prefs?.theme) return null;
+    const migrate: Record<string, ThemeId> = { paper: 'library', ivory: 'manual', dusk: 'lamplight', carbon: 'console' };
+    const mapped = migrate[prefs.theme] ?? prefs.theme;
+    const valid = THEMES.find((t) => t.id === mapped);
+    return valid ? (mapped as ThemeId) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
 function loadLastDoc(): DocState | null {
   try {
     const raw = localStorage.getItem(DOC_KEY);
@@ -492,7 +511,7 @@ function PasteModal({ open, onClose, onRender }: { open: boolean; onClose: () =>
 
 export function App() {
   const [doc, setDoc] = useState<DocState>({ markdown: '', name: '' });
-  const [theme, setTheme] = useState<ThemeId>('library');
+  const [theme, setTheme] = useState<ThemeId>(() => readStoredTheme() ?? preferredThemeFromBrowserScheme());
   const [focusMode, setFocusMode] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -511,12 +530,6 @@ export function App() {
   useEffect(() => {
     configureMarked();
     const prefs = loadPrefs();
-    if (prefs?.theme) {
-      const migrate: Record<string, ThemeId> = { paper: 'library', ivory: 'manual', dusk: 'lamplight', carbon: 'console' };
-      const mapped = migrate[prefs.theme] ?? prefs.theme;
-      const valid = THEMES.find((t) => t.id === mapped);
-      setTheme(valid ? (mapped as ThemeId) : 'library');
-    }
     if (typeof prefs?.sidebarCollapsed === 'boolean') setSidebarCollapsed(prefs.sidebarCollapsed);
     const last = loadLastDoc();
     if (last?.markdown) setDoc({ markdown: last.markdown, name: last.name ?? '' });

@@ -37,16 +37,17 @@
       "properties": {
         "doclume.theme": {
           "type": "string",
-          "enum": ["library", "lamplight", "manual", "console", "contrast"],
+          "enum": ["auto", "library", "lamplight", "manual", "console", "contrast"],
           "enumDescriptions": [
+            "Match VS Code light/dark (Manual in light, Console in dark)",
             "Long reads · light (serif, warm cream)",
             "Long reads · dark (serif, amber-toned)",
             "Spec / docs · light (sans, clean)",
             "Spec / docs · dark (sans, IDE-style)",
             "High contrast (accessibility)"
           ],
-          "default": "library",
-          "description": "Doclume theme for the markdown preview."
+          "default": "auto",
+          "description": "Doclume theme for the markdown preview. \"auto\" follows the active workbench color theme (light → Manual, dark → Console)."
         }
       }
     }

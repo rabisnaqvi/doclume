@@ -10,8 +10,22 @@ function getNonce(): string {
   return text;
 }
 
-function getTheme(config: vscode.WorkspaceConfiguration): ThemeId {
-  return (config.get<string>('theme') ?? 'library') as ThemeId;
+const EXPLICIT_THEMES: ThemeId[] = ['library', 'lamplight', 'manual', 'console', 'contrast'];
+
+function themeFromWorkbench(): ThemeId {
+  const kind = vscode.window.activeColorTheme.kind;
+  if (kind === vscode.ColorThemeKind.Dark || kind === vscode.ColorThemeKind.HighContrast) {
+    return 'console';
+  }
+  return 'manual';
+}
+
+function resolvePreviewTheme(config: vscode.WorkspaceConfiguration): ThemeId {
+  const raw = config.get<string>('theme');
+  if (raw === undefined || raw === null || raw === 'auto') {
+    return themeFromWorkbench();
+  }
+  return EXPLICIT_THEMES.includes(raw as ThemeId) ? (raw as ThemeId) : themeFromWorkbench();
 }
 
 function buildWebviewHtml(
@@ -83,7 +97,7 @@ export function activate(context: vscode.ExtensionContext): void {
       );
 
       const nonce = getNonce();
-      let theme = getTheme(config);
+      let theme = resolvePreviewTheme(config);
       panel.webview.html = buildWebviewHtml(panel.webview, context.extensionUri, nonce, theme);
 
       const sendUpdate = (): void => {
@@ -102,7 +116,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
       // Send initial content once webview signals ready
       panel.webview.onDidReceiveMessage((msg) => {
-        if (msg.type === 'ready') sendUpdate();
+        if (msg.type === 'ready') {
+          sendTheme(theme);
+          sendUpdate();
+        }
       });
 
       // Watch for document changes
@@ -113,7 +130,16 @@ export function activate(context: vscode.ExtensionContext): void {
       // Watch for config changes
       const configListener = vscode.workspace.onDidChangeConfiguration((e) => {
         if (e.affectsConfiguration('doclume.theme')) {
-          theme = getTheme(vscode.workspace.getConfiguration('doclume'));
+          theme = resolvePreviewTheme(vscode.workspace.getConfiguration('doclume'));
+          sendTheme(theme);
+        }
+      });
+
+      const colorThemeListener = vscode.window.onDidChangeActiveColorTheme(() => {
+        const cfg = vscode.workspace.getConfiguration('doclume');
+        const raw = cfg.get<string>('theme');
+        if (raw === undefined || raw === null || raw === 'auto') {
+          theme = themeFromWorkbench();
           sendTheme(theme);
         }
       });
@@ -121,9 +147,8 @@ export function activate(context: vscode.ExtensionContext): void {
       panel.onDidDispose(() => {
         docListener.dispose();
         configListener.dispose();
+        colorThemeListener.dispose();
       });
-
-      context.subscriptions.push(docListener, configListener);
     }),
   );
 }
