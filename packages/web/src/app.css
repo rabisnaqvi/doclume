@@ -98,7 +98,7 @@ img { max-width: 100%; height: auto; display: block; }
   gap: 10px;
 }
 
-.topbar__right { justify-content: flex-end; }
+.topbar__right { justify-content: flex-end; grid-column: 3; }
 
 .brand {
   display: inline-flex;
@@ -793,7 +793,7 @@ body.is-focus .focus-exit:hover { opacity: 1; }
   .topbar { grid-template-columns: 1fr auto; padding: 12px 16px; gap: 10px; }
   .search { width: 100%; min-width: 0; }
   .topbar__center { grid-column: 1 / -1; order: 3; }
-  .topbar__right { justify-self: end; }
+  .topbar__right { justify-self: end; grid-column: auto; }
 }
 
 /* =========================================================================
