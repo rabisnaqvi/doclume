@@ -53,7 +53,6 @@ export function Viewer() {
 
   return (
     <div className="vsc-viewer">
-      {docName && <div className="vsc-viewer__name">{docName}</div>}
       <article
         ref={contentRef}
         className="markdown"

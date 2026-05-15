@@ -303,7 +303,6 @@ html[data-theme='lamplight'] .markdown thead {
 
 html[data-theme='library'] .markdown p,
 html[data-theme='lamplight'] .markdown p {
-  text-align: justify;
   hyphens: auto;
   -webkit-hyphens: auto;
   text-wrap: pretty;
