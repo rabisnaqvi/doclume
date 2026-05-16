@@ -7,6 +7,7 @@
     "build": "pnpm --filter @doclume/core build && pnpm --filter @doclume/web build && pnpm --filter doclume build",
     "build:core": "pnpm --filter @doclume/core build",
     "build:web": "pnpm --filter @doclume/web build",
+    "deploy:pages": "pnpm build:web && pnpm dlx wrangler pages deploy packages/web/dist --project-name doclume",
     "build:ext": "pnpm --filter doclume build",
     "package:ext": "pnpm --filter doclume package",
     "typecheck": "tsc --build"
