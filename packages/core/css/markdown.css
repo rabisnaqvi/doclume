@@ -59,6 +59,7 @@
   border-left: 3px solid var(--accent);
   color: var(--text-soft);
   font-style: italic;
+  background: transparent;
 }
 
 .markdown blockquote p { margin-bottom: 0.6em; }
@@ -106,7 +107,11 @@
 .markdown td {
   padding: 8px 14px 8px 0;
   border-bottom: 1px solid var(--border-soft);
+  border-top: 0;
   color: var(--text-soft);
+}
+.markdown table > tbody > tr > td {
+  border-top: 0;
 }
 .markdown tbody tr:last-child td { border-bottom: 0; }
 .markdown th:last-child, .markdown td:last-child { padding-right: 0; }

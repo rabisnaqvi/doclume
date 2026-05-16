@@ -6,7 +6,7 @@
 
 html, body {
   margin: 0;
-  padding: 0;
+  padding: 0 !important;
   min-height: 100vh;
 }
 
@@ -35,13 +35,13 @@ body::before {
 
 html[data-theme='lamplight'] body::before { mix-blend-mode: screen; }
 
-a {
+body a {
   color: var(--accent);
   text-decoration: none;
   border-bottom: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
 }
 
-a:hover { border-bottom-color: var(--accent); background: var(--accent-soft); }
+body a:hover { border-bottom-color: var(--accent); background: var(--accent-soft); }
 
 img { max-width: 100%; height: auto; display: block; }
 
