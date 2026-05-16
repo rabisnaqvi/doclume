@@ -3,6 +3,7 @@
   "compilerOptions": {
     "module": "CommonJS",
     "moduleResolution": "node",
+    "types": ["node", "vscode"],
     "rootDir": "./src",
     "outDir": "./dist",
     "noEmit": true

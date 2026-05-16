@@ -19,6 +19,10 @@ function isMarkdownLikeDocument(document: vscode.TextDocument): boolean {
   return MARKDOWN_LIKE.test(document.languageId) || document.fileName.toLowerCase().endsWith('.md');
 }
 
+function findBuiltAsset(files: readonly string[], extension: string): string | undefined {
+  return files.filter((file) => file.endsWith(extension)).sort((a, b) => a.localeCompare(b))[0];
+}
+
 function themeFromWorkbench(): ThemeId {
   const kind = vscode.window.activeColorTheme.kind;
   if (kind === vscode.ColorThemeKind.Dark || kind === vscode.ColorThemeKind.HighContrast) {
@@ -48,16 +52,67 @@ function buildWebviewHtml(
   const assetsDir = vscode.Uri.joinPath(distDir, 'assets');
   let jsFile = '';
   let cssFile = '';
-  
+
   try {
     const files = fs.readdirSync(assetsDir.fsPath);
-    jsFile = files.find((f) => f.endsWith('.js')) || '';
-    cssFile = files.find((f) => f.endsWith('.css')) || '';
+    jsFile = findBuiltAsset(files, '.js') || '';
+    cssFile = findBuiltAsset(files, '.css') || '';
   } catch (e) {
     console.error('Could not read assets directory:', e);
   }
 
-  const jsUri = jsFile ? webview.asWebviewUri(vscode.Uri.joinPath(assetsDir, jsFile)) : '';
+  if (!jsFile) {
+    return `<!DOCTYPE html>
+<html lang="en" data-theme="${theme}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doclume</title>
+  <style>
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #111827;
+      color: #f9fafb;
+    }
+    .panel {
+      max-width: 42rem;
+      padding: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      background: rgba(17, 24, 39, 0.92);
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+    }
+    h1 {
+      margin: 0 0 0.75rem;
+      font-size: 1.25rem;
+    }
+    p {
+      margin: 0.5rem 0 0;
+      line-height: 1.6;
+      color: rgba(249, 250, 251, 0.82);
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.15rem 0.35rem;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <h1>Doclume preview assets not found</h1>
+    <p>Rebuild the extension package so <code>dist/webview/assets/*.js</code> exists, then reopen the preview.</p>
+  </div>
+</body>
+</html>`;
+  }
+
+  const jsUri = webview.asWebviewUri(vscode.Uri.joinPath(assetsDir, jsFile));
   const cssUri = cssFile ? webview.asWebviewUri(vscode.Uri.joinPath(assetsDir, cssFile)) : '';
 
   return `<!DOCTYPE html>
@@ -81,7 +136,7 @@ function buildWebviewHtml(
 </head>
 <body>
   <div id="root"></div>
-  ${jsUri ? `<script type="module" nonce="${nonce}" src="${jsUri}"></script>` : ''}
+  <script type="module" nonce="${nonce}" src="${jsUri}"></script>
 </body>
 </html>`;
 }
