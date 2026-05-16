@@ -1,0 +1,110 @@
+# Doclume — Better Markdown Preview for VS Code
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <a href="images/theme-library.png"><img src="images/theme-library.png" alt="Library theme — serif, warm cream" /></a>
+      <br /><b>Library</b> &nbsp;·&nbsp; Serif · light · warm cream
+    </td>
+    <td align="center" width="50%">
+      <a href="images/theme-lamplight.png"><img src="images/theme-lamplight.png" alt="Lamplight theme — serif, amber on dark" /></a>
+      <br /><b>Lamplight</b> &nbsp;·&nbsp; Serif · dark · amber
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <a href="images/theme-manual.png"><img src="images/theme-manual.png" alt="Manual theme — sans, clean white" /></a>
+      <br /><b>Manual</b> &nbsp;·&nbsp; Sans · light · clean
+    </td>
+    <td align="center" width="50%">
+      <a href="images/theme-console.png"><img src="images/theme-console.png" alt="Console theme — sans, dark IDE style" /></a>
+      <br /><b>Console</b> &nbsp;·&nbsp; Sans · dark · IDE-style
+    </td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2">
+      <a href="images/theme-high-contrast.png"><img src="images/theme-high-contrast.png" alt="High Contrast theme — black background, yellow accents" width="50%" /></a>
+      <br /><b>High Contrast</b> &nbsp;·&nbsp; Sans · accessibility · WCAG
+    </td>
+  </tr>
+</table>
+
+---
+
+**A markdown preview that respects typography.** Five hand-crafted reading themes — serif for long-form, sans for technical docs, dark and light variants, plus high contrast for accessibility. Opens beside your editor, updates as you type.
+
+→ [GitHub](https://github.com/rabisnaqvi/doclume)
+
+---
+
+## Themes
+
+Five reading themes, two font families, both sides of dark/light:
+
+| Theme | Mode | Best for |
+|-------|------|----------|
+| **Library** | Serif · light | Long reads, essays, changelogs |
+| **Lamplight** | Serif · dark | Late-night reading, warm amber tones |
+| **Manual** | Sans · light | Specs, READMEs, API docs |
+| **Console** | Sans · dark | Technical docs, IDE-style |
+| **High Contrast** | Sans | Accessibility, WCAG |
+
+**Auto mode** tracks your VS Code color theme — light workspace gets Manual, dark gets Console. Switch VS Code themes and the markdown preview follows instantly.
+
+---
+
+## Usage
+
+Open any markdown file and press:
+
+- **Mac:** `Cmd+K Cmd+Shift+L`
+- **Windows / Linux:** `Ctrl+K Ctrl+Shift+L`
+
+Also available via:
+- Book icon `📖` in the editor toolbar
+- Right-click file in Explorer → **Open in Doclume**
+- Command Palette → **Doclume: Open in Doclume**
+
+Preview opens in a split panel beside the editor and live-reloads on every keystroke.
+
+---
+
+## Commands
+
+| Command | What it does |
+|---------|--------------|
+| `Doclume: Open in Doclume` | Open markdown preview beside active editor |
+| `Doclume: Select Doclume Theme…` | Pick theme from quick-pick list |
+| `Doclume: Cycle Doclume Theme` | Rotate through all themes in order |
+
+---
+
+## Configuration
+
+```jsonc
+{
+  // auto | library | lamplight | manual | console | contrast
+  // auto follows VS Code light/dark: light → Manual, dark → Console
+  "doclume.theme": "auto"
+}
+```
+
+Settings apply workspace-wide when a workspace is open, globally otherwise.
+
+---
+
+## Supported file types
+
+`.md` · `.prompt` · `.instructions` · `.chatagent` · `.skill`
+
+---
+
+## Why Doclume
+
+VS Code's built-in markdown preview is functional. Doclume is opinionated — it treats markdown as something worth reading, not just rendering. Serif fonts for prose, proper line lengths, themes that don't feel like an afterthought.
+
+---
+
+## License
+
+MIT · [rabisnaqvi](https://github.com/rabisnaqvi)

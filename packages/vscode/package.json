@@ -1,7 +1,7 @@
 {
   "name": "doclume",
   "displayName": "Doclume",
-  "description": "A beautiful markdown preview — Library, Lamplight, Manual, Console, and more themes.",
+  "description": "Markdown preview with beautiful typography and themes. Serif and sans reading modes, dark and light, for VS Code.",
   "version": "0.1.0",
   "publisher": "rabisnaqvi",
   "license": "MIT",
@@ -10,7 +10,24 @@
     "url": "https://github.com/rabisnaqvi/doclume.git"
   },
   "engines": { "vscode": "^1.93.0" },
-  "categories": ["Formatters", "Visualization"],
+  "categories": ["Formatters", "Visualization", "Other"],
+  "keywords": [
+    "markdown",
+    "preview",
+    "markdown preview",
+    "themes",
+    "reader",
+    "markdown viewer",
+    "dark theme",
+    "light theme",
+    "serif",
+    "typography",
+    "reading mode",
+    "document viewer",
+    "markdown reader",
+    "beautiful markdown",
+    "markdown themes"
+  ],
   "activationEvents": [
     "onLanguage:markdown",
     "onLanguage:prompt",

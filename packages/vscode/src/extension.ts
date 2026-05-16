@@ -40,6 +40,7 @@ function buildWebviewHtml(
   extensionUri: vscode.Uri,
   nonce: string,
   theme: ThemeId,
+  baseUri?: string,
 ): string {
   const distDir = vscode.Uri.joinPath(extensionUri, 'dist', 'webview');
 
@@ -75,6 +76,7 @@ function buildWebviewHtml(
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link nonce="${nonce}" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   ${cssUri ? `<link rel="stylesheet" nonce="${nonce}" href="${cssUri}" />` : ''}
+  ${baseUri ? `<base href="${baseUri}">` : ''}
   <title>Doclume</title>
 </head>
 <body>
@@ -170,14 +172,19 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.ViewColumn.Beside,
         {
           enableScripts: true,
-          localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'dist')],
+          localResourceRoots: [
+            vscode.Uri.joinPath(context.extensionUri, 'dist'),
+            vscode.Uri.file(path.dirname(document.fileName)),
+            ...(vscode.workspace.workspaceFolders?.map(f => f.uri) || [])
+          ],
           retainContextWhenHidden: true,
         },
       );
 
       const nonce = getNonce();
       let theme = resolvePreviewTheme(config);
-      panel.webview.html = buildWebviewHtml(panel.webview, context.extensionUri, nonce, theme);
+      const baseUri = panel.webview.asWebviewUri(vscode.Uri.file(path.dirname(document.fileName))).toString() + '/';
+      panel.webview.html = buildWebviewHtml(panel.webview, context.extensionUri, nonce, theme, baseUri);
 
       const sendUpdate = (): void => {
         const msg: WebviewMessage = {
