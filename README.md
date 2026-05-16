@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="https://raw.githubusercontent.com/rabisnaqvi/doclume/main/packages/vscode/images/icon.png" alt="Doclume" width="120" />
+
 # Doclume
 
 **Five themes. Zero Comic Sans.**
