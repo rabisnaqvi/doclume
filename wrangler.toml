@@ -1,3 +1,5 @@
 name = "doclume"
 compatibility_date = "2024-01-01"
-pages_build_output_dir = "./packages/web/dist"
+
+[assets]
+directory = "./packages/web/dist"
