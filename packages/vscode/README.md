@@ -1,29 +1,29 @@
-# Doclume — Better Markdown Preview for VS Code
+# Doclume — Five Themes. Zero Comic Sans.
 
 <table>
   <tr>
     <td align="center" width="50%">
-      <a href="images/theme-library.png"><img src="images/theme-library.png" alt="Library theme — serif, warm cream" /></a>
+      <a href="https://raw.githubusercontent.com/rabisnaqvi/doclume/main/packages/vscode/images/theme-library.png"><img src="https://raw.githubusercontent.com/rabisnaqvi/doclume/main/packages/vscode/images/theme-library.png" alt="Library theme — serif, warm cream" /></a>
       <br /><b>Library</b> &nbsp;·&nbsp; Serif · light · warm cream
     </td>
     <td align="center" width="50%">
-      <a href="images/theme-lamplight.png"><img src="images/theme-lamplight.png" alt="Lamplight theme — serif, amber on dark" /></a>
+      <a href="https://raw.githubusercontent.com/rabisnaqvi/doclume/main/packages/vscode/images/theme-lamplight.png"><img src="https://raw.githubusercontent.com/rabisnaqvi/doclume/main/packages/vscode/images/theme-lamplight.png" alt="Lamplight theme — serif, amber on dark" /></a>
       <br /><b>Lamplight</b> &nbsp;·&nbsp; Serif · dark · amber
     </td>
   </tr>
   <tr>
     <td align="center" width="50%">
-      <a href="images/theme-manual.png"><img src="images/theme-manual.png" alt="Manual theme — sans, clean white" /></a>
+      <a href="https://raw.githubusercontent.com/rabisnaqvi/doclume/main/packages/vscode/images/theme-manual.png"><img src="https://raw.githubusercontent.com/rabisnaqvi/doclume/main/packages/vscode/images/theme-manual.png" alt="Manual theme — sans, clean white" /></a>
       <br /><b>Manual</b> &nbsp;·&nbsp; Sans · light · clean
     </td>
     <td align="center" width="50%">
-      <a href="images/theme-console.png"><img src="images/theme-console.png" alt="Console theme — sans, dark IDE style" /></a>
+      <a href="https://raw.githubusercontent.com/rabisnaqvi/doclume/main/packages/vscode/images/theme-console.png"><img src="https://raw.githubusercontent.com/rabisnaqvi/doclume/main/packages/vscode/images/theme-console.png" alt="Console theme — sans, dark IDE style" /></a>
       <br /><b>Console</b> &nbsp;·&nbsp; Sans · dark · IDE-style
     </td>
   </tr>
   <tr>
     <td align="center" colspan="2">
-      <a href="images/theme-high-contrast.png"><img src="images/theme-high-contrast.png" alt="High Contrast theme — black background, yellow accents" width="50%" /></a>
+      <a href="https://raw.githubusercontent.com/rabisnaqvi/doclume/main/packages/vscode/images/theme-high-contrast.png"><img src="https://raw.githubusercontent.com/rabisnaqvi/doclume/main/packages/vscode/images/theme-high-contrast.png" alt="High Contrast theme — black background, yellow accents" width="50%" /></a>
       <br /><b>High Contrast</b> &nbsp;·&nbsp; Sans · accessibility · WCAG
     </td>
   </tr>

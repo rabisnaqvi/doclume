@@ -801,7 +801,7 @@ export function App() {
       <footer className="app-footer">
         <span>© {new Date().getFullYear()} Rabis Naqvi</span>
         <span className="app-footer__dot" />
-        <span>because markdown shouldn't look sad</span>
+        <span>five themes, zero Comic Sans</span>
         <span className="app-footer__dot" />
         <span>made with AI, not by AI</span>
       </footer>
