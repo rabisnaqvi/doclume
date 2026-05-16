@@ -8,6 +8,7 @@
     "build:core": "pnpm --filter @doclume/core build",
     "build:web": "pnpm --filter @doclume/web build",
     "deploy:worker": "pnpm dlx wrangler deploy --config wrangler.toml",
+    "deploy:worker:preview": "pnpm dlx wrangler versions upload --config wrangler.toml",
     "build:ext": "pnpm --filter doclume build",
     "package:ext": "pnpm --filter doclume package",
     "typecheck": "tsc --build"
