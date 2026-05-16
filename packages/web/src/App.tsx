@@ -284,7 +284,7 @@ function Topbar({
     <header className="topbar">
       <div className="topbar__left">
         <button type="button" className="brand brand--button" onClick={onHome} title="Back to start" aria-label="Back to start">
-          <span className="brand__mark">D</span>
+          <img src="/favicon.svg" className="brand__mark" alt="Doclume"/>
           <span className="brand__title">Doclume</span>
         </button>
         <a
@@ -438,7 +438,7 @@ function EmptyState({ onOpen, onPaste, onSample }: { onOpen: () => void; onPaste
   return (
     <div className="empty">
       <div className="empty__card">
-        <span className="empty__mark">D</span>
+        <img src="/favicon.svg" className="empty__mark" alt="Doclume"/>
         <h1 className="empty__title">Open a document in Doclume.</h1>
         <p className="empty__sub">
           Drop a markdown file into Doclume, open one from disk, or paste raw markdown.

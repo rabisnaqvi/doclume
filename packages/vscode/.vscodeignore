@@ -1,0 +1,6 @@
+**/*.map
+**/*.ts
+!dist/**
+node_modules/**
+src/**
+.vscode/**

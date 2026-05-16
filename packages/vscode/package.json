@@ -4,9 +4,13 @@
   "description": "A beautiful markdown preview — Library, Lamplight, Manual, Console, and more themes.",
   "version": "0.1.0",
   "publisher": "rabisnaqvi",
-  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rabisnaqvi/doclume.git"
+  },
   "engines": { "vscode": "^1.93.0" },
-  "categories": ["Other"],
+  "categories": ["Formatters", "Visualization"],
   "activationEvents": [
     "onLanguage:markdown",
     "onLanguage:prompt",
@@ -16,6 +20,7 @@
     "onCommand:doclume.selectTheme",
     "onCommand:doclume.cycleTheme"
   ],
+  "icon": "images/icon.png",
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
@@ -113,7 +118,8 @@
     "build:ext": "node build.mjs",
     "build:webview": "vite build",
     "watch": "pnpm build:ext -- --watch",
-    "package": "vsce package --no-dependencies"
+    "package": "vsce package --no-dependencies",
+    "publish": "vsce publish --no-dependencies"
   },
   "dependencies": {
     "@doclume/core": "workspace:*"
