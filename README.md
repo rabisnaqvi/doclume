@@ -79,7 +79,7 @@ Open markdown in any browser — no install, no account, no friction.
 
 **[→ doclume.rabisnaqvi.workers.dev](https://doclume.rabisnaqvi.workers.dev/)**
 
-- Paste markdown or open a local `.md` file
+- Paste markdown or open a local `.md`, `.prompt`, `.instructions`, `.chatagent`, or `.skill` file
 - Pick a theme, read comfortably
 - Syntax highlighting, word count, reading time
 

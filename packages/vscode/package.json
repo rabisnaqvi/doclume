@@ -2,7 +2,7 @@
   "name": "doclume",
   "displayName": "Doclume",
   "description": "Markdown preview with beautiful typography and themes. Serif and sans reading modes, dark and light, for VS Code.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "rabisnaqvi",
   "license": "MIT",
   "repository": {
@@ -110,6 +110,14 @@
         }
       ]
     },
+    "configurationDefaults": {
+      "files.associations": {
+        "*.chatagent": "markdown",
+        "*.instructions": "markdown",
+        "*.prompt": "markdown",
+        "*.skill": "markdown"
+      }
+    },
     "configuration": {
       "title": "Doclume",
       "properties": {
@@ -136,7 +144,7 @@
     "build:webview": "vite build",
     "watch": "pnpm build:ext -- --watch",
     "package": "vsce package --no-dependencies",
-    "publish": "vsce publish --no-dependencies"
+    "publish": "vsce publish --no-dependencies && ovsx publish --no-dependencies"
   },
   "dependencies": {
     "@doclume/core": "workspace:*"
@@ -148,6 +156,7 @@
     "@types/vscode": "^1.93.0",
     "@vitejs/plugin-react": "^4.3.1",
     "@vscode/vsce": "^3.0.0",
+    "ovsx": "^0.9.0",
     "esbuild": "^0.26.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

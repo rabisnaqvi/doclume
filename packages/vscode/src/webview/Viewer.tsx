@@ -46,7 +46,7 @@ export function Viewer() {
   if (!markdown) {
     return (
       <div className="vsc-empty">
-        <p>Open a <code>.md</code> file and click <strong>Open in Doclume</strong> to preview it here.</p>
+        <p>Open a <code>.md</code>, <code>.prompt</code>, <code>.instructions</code>, <code>.chatagent</code>, or <code>.skill</code> file and click <strong>Open in Doclume</strong> to preview it here.</p>
       </div>
     );
   }

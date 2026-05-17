@@ -55,7 +55,7 @@ Five reading themes, two font families, both sides of dark/light:
 
 ## Usage
 
-Open any markdown file and press:
+Open any `.md`, `.prompt`, `.instructions`, `.chatagent`, or `.skill` file and press:
 
 - **Mac:** `Cmd+K Cmd+Shift+L`
 - **Windows / Linux:** `Ctrl+K Ctrl+Shift+L`

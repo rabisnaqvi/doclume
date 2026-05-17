@@ -12,6 +12,7 @@
     "deploy:worker:preview": "pnpm dlx wrangler versions upload --config wrangler.toml",
     "build:ext": "pnpm --filter doclume build",
     "package:ext": "pnpm --filter doclume package",
+    "publish:ext": "pnpm --filter doclume publish",
     "typecheck": "tsc --build"
   },
   "devDependencies": {

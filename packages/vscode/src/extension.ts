@@ -14,9 +14,11 @@ const EXPLICIT_THEMES: ThemeId[] = ['library', 'lamplight', 'manual', 'console',
 
 /** Same language ids as built-in Markdown preview (incl. Cursor agent / prompt buffers). */
 const MARKDOWN_LIKE = /^(markdown|prompt|instructions|chatagent|skill)$/;
+const SUPPORTED_MARKDOWN_EXTENSIONS = ['.md', '.prompt', '.instructions', '.chatagent', '.skill'] as const;
 
 function isMarkdownLikeDocument(document: vscode.TextDocument): boolean {
-  return MARKDOWN_LIKE.test(document.languageId) || document.fileName.toLowerCase().endsWith('.md');
+  const fileName = document.fileName.toLowerCase();
+  return MARKDOWN_LIKE.test(document.languageId) || SUPPORTED_MARKDOWN_EXTENSIONS.some((extension) => fileName.endsWith(extension));
 }
 
 function findBuiltAsset(files: readonly string[], extension: string): string | undefined {
