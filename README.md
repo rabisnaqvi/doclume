@@ -73,6 +73,20 @@ Serif fonts for long-form prose. Proper line lengths. Themes that don't feel lik
 
 ---
 
+## Markdown
+
+Same pipeline in the **web app** and the **VS Code** preview:
+
+- **GFM** tables, task lists, strikethrough
+- **Syntax highlighting** (many languages via highlight.js)
+- **Mermaid** — fenced code blocks with language `mermaid`
+- **Math (KaTeX)** — display `$$…$$`, inline `$…$`
+- **Footnotes** — `[^1]` / `[^note]:` style
+- **Definition lists** — term on one line, definitions starting with `: `
+- **Word count** and **estimated reading time** (web app UI)
+
+---
+
 ## Web app
 
 Open markdown in any browser — no install, no account, no friction.
@@ -81,13 +95,13 @@ Open markdown in any browser — no install, no account, no friction.
 
 - Paste markdown or open a local `.md`, `.prompt`, `.instructions`, `.chatagent`, or `.skill` file
 - Pick a theme, read comfortably
-- Syntax highlighting, word count, reading time
+- **Outline** (table of contents) and **in-document search** (`Ctrl+F` / `Cmd+F`)
 
 ---
 
 ## VS Code extension
 
-Live preview beside your editor, updating on every keystroke.
+Live preview beside your editor; content updates as you edit (same Markdown features as above). Fonts load from the extension bundle (no Google Fonts fetch in the webview).
 
 **Install:**
 ```sh

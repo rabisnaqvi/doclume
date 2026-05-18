@@ -1,0 +1,5 @@
+/* Self-hosted variable fonts for VS Code webview — avoids Google Fonts network call */
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/source-serif-4/wght.css';
+@import '@fontsource-variable/source-serif-4/wght-italic.css';
+@import '@fontsource-variable/jetbrains-mono/wght.css';

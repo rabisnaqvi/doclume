@@ -31,9 +31,15 @@
 
 ---
 
-**A markdown preview that respects typography.** Five hand-crafted reading themes — serif for long-form, sans for technical docs, dark and light variants, plus high contrast for accessibility. Opens beside your editor, updates as you type.
+**A markdown preview that respects typography.** Five hand-crafted reading themes — serif for long-form, sans for technical docs, dark and light variants, plus high contrast for accessibility. Opens beside your editor; content updates as you edit. Reading fonts ship with the extension (no external font CDN in the webview).
 
 → [GitHub](https://github.com/rabisnaqvi/doclume)
+
+---
+
+## Markdown
+
+The preview uses the same core renderer as the [web app](https://doclume.rabisnaqvi.workers.dev/): GFM-style tables and task lists, **syntax highlighting**, **Mermaid** (fenced code blocks with language `mermaid`), **KaTeX** math (`$$…$$` display, `$…$` inline), **footnotes**, and **definition lists** (term + `: ` definition lines).
 
 ---
 
@@ -65,7 +71,7 @@ Also available via:
 - Right-click file in Explorer → **Open in Doclume**
 - Command Palette → **Doclume: Open in Doclume**
 
-Preview opens in a split panel beside the editor and live-reloads on every keystroke.
+Preview opens in a split panel beside the editor and tracks edits (updates are batched briefly so typing stays smooth).
 
 ---
 

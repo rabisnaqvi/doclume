@@ -2,7 +2,12 @@
    Doclume markdown content styles — shared between web and vscode webview
    ========================================================================= */
 
-.markdown { color: var(--text); }
+@import 'katex/dist/katex.min.css';
+
+.markdown {
+  color: var(--text);
+  overflow-wrap: break-word;
+}
 
 .markdown > :first-child { margin-top: 0; }
 .markdown > :last-child { margin-bottom: 0; }
@@ -87,10 +92,20 @@
   font-family: var(--ui-font);
 }
 
-.markdown table {
-  width: 100%;
-  border-collapse: collapse;
+/* GFM tables: horizontal scroll on wrapper, not whole reader/page */
+.markdown-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   margin: 0 0 var(--paragraph-spacing);
+}
+
+.markdown table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  margin: 0;
   font-family: var(--ui-font);
   font-size: 0.9em;
   line-height: 1.5;
@@ -134,7 +149,8 @@
   border-radius: 4px;
   border: 1px solid var(--border-soft);
   color: var(--text-soft);
-  white-space: nowrap;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .markdown pre {
@@ -156,6 +172,8 @@
   background: transparent;
   padding: 0;
   border: 0;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 /* Syntax highlight tokens */
@@ -219,6 +237,37 @@ html[data-theme='lamplight'] .markdown h3 {
   font-style: italic;
   font-weight: 500;
   color: var(--text-soft);
+}
+
+html[data-theme='library'] .markdown h4,
+html[data-theme='lamplight'] .markdown h4 {
+  font-style: italic;
+  font-weight: 500;
+  font-family: var(--body-font);
+  color: var(--text-soft);
+  letter-spacing: 0;
+}
+
+html[data-theme='library'] .markdown h5,
+html[data-theme='library'] .markdown h6,
+html[data-theme='lamplight'] .markdown h5,
+html[data-theme='lamplight'] .markdown h6 {
+  font-family: var(--body-font);
+  font-style: italic;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+html[data-theme='library'] .markdown a,
+html[data-theme='lamplight'] .markdown a {
+  text-decoration-color: color-mix(in oklab, var(--accent) 30%, transparent);
+}
+
+html[data-theme='library'] .markdown a:hover,
+html[data-theme='lamplight'] .markdown a:hover {
+  background: transparent;
 }
 
 html[data-theme='library'] .markdown blockquote,
@@ -360,6 +409,26 @@ html[data-theme='console'] .markdown h4 {
   color: var(--text);
 }
 
+html[data-theme='manual'] .markdown h5,
+html[data-theme='manual'] .markdown h6,
+html[data-theme='console'] .markdown h5,
+html[data-theme='console'] .markdown h6 {
+  font-weight: 600;
+  font-family: var(--ui-font);
+  color: var(--text-soft);
+  letter-spacing: 0.04em;
+}
+
+html[data-theme='manual'] .markdown a,
+html[data-theme='console'] .markdown a {
+  font-weight: 500;
+}
+
+html[data-theme='manual'] .markdown a:hover,
+html[data-theme='console'] .markdown a:hover {
+  text-decoration-color: var(--accent);
+}
+
 html[data-theme='manual'] .markdown pre,
 html[data-theme='console'] .markdown pre {
   background: var(--surface);
@@ -451,6 +520,428 @@ html[data-theme='manual'] .markdown img,
 html[data-theme='console'] .markdown img {
   border: 1px solid var(--border-soft);
   border-radius: 6px;
+}
+
+/* Links */
+.markdown a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--accent) 40%, transparent);
+  text-underline-offset: 2px;
+  transition: color 120ms ease, text-decoration-color 120ms ease;
+}
+
+.markdown a:hover {
+  text-decoration-color: var(--accent);
+}
+
+/* =========================================================================
+   Missing elements — strikethrough, task lists, kbd, sup/sub, mark,
+   abbr, details/summary, definition lists, footnotes, math, mermaid
+   ========================================================================= */
+
+.markdown del, .markdown s {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+/* Task lists */
+.markdown ul:has(> li > input[type="checkbox"]) {
+  list-style: none;
+  padding-left: 0.25em;
+}
+
+.markdown li:has(> input[type="checkbox"]) {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55em;
+  margin: 0.3em 0;
+}
+
+.markdown input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1em;
+  height: 1em;
+  border: 1.5px solid var(--border);
+  border-radius: 3px;
+  background: var(--surface);
+  flex-shrink: 0;
+  position: relative;
+  top: 0.1em;
+  cursor: default;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.markdown input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.markdown input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 0.5em;
+  height: 0.28em;
+  border-left: 1.5px solid var(--accent-contrast);
+  border-bottom: 1.5px solid var(--accent-contrast);
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+/* Multi-paragraph list items */
+.markdown li > p { margin-top: 0; margin-bottom: 0.4em; }
+
+/* Nested blockquotes */
+.markdown blockquote blockquote {
+  margin-left: 0;
+  opacity: 0.82;
+  border-left-color: var(--border);
+}
+
+/* kbd */
+.markdown kbd {
+  display: inline-block;
+  font-family: var(--mono-font);
+  font-size: 0.8em;
+  padding: 0.1em 0.45em;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom: 2px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-soft);
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+/* sup / sub */
+.markdown sup, .markdown sub {
+  font-size: 0.75em;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+.markdown sup { top: -0.5em; }
+.markdown sub { bottom: -0.3em; }
+
+/* mark — literal highlight (not search) */
+.markdown mark:not([data-search-hit]) {
+  background: var(--accent-soft);
+  color: var(--text);
+  border-radius: 2px;
+  padding: 0.05em 0.15em;
+}
+
+/* abbr */
+.markdown abbr[title] {
+  text-decoration: underline dotted var(--muted-soft);
+  cursor: help;
+}
+
+/* details / summary */
+.markdown details {
+  margin: 1em 0 var(--paragraph-spacing);
+  padding: 0.6em 1em;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+}
+
+.markdown details[open] { padding-bottom: 0.8em; }
+
+.markdown summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-soft);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  user-select: none;
+}
+
+.markdown summary::-webkit-details-marker { display: none; }
+
+.markdown summary::before {
+  content: '▶';
+  font-size: 0.6em;
+  color: var(--muted);
+  transition: transform 120ms ease;
+  flex-shrink: 0;
+}
+
+.markdown details[open] > summary::before { transform: rotate(90deg); }
+
+.markdown details > :not(summary) { margin-top: 0.8em; }
+
+/* Definition lists */
+.markdown dl { margin: 0 0 var(--paragraph-spacing); }
+
+.markdown dt {
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 0.8em;
+}
+
+.markdown dt:first-child { margin-top: 0; }
+
+.markdown dd {
+  margin: 0.15em 0 0 1.5em;
+  color: var(--muted);
+}
+
+/* Footnotes */
+.markdown .footnotes {
+  margin-top: 3em;
+  padding-top: 1.2em;
+  border-top: 1px solid var(--border-soft);
+  font-size: 0.88em;
+  color: var(--muted);
+}
+
+.markdown .footnotes ol { padding-left: 1.4em; }
+.markdown .footnotes li { margin: 0.4em 0; }
+
+.markdown a[data-footnote-ref] {
+  font-size: 0.8em;
+  vertical-align: super;
+  border-bottom: 0;
+  font-family: var(--mono-font);
+  color: var(--accent);
+}
+
+.markdown a[data-footnote-backref] {
+  border-bottom: 0;
+  color: var(--muted);
+  font-size: 0.9em;
+}
+
+/* Math (KaTeX) */
+.markdown .math-block {
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 1.2em 0 var(--paragraph-spacing);
+  text-align: center;
+  padding: 0.4em 0;
+}
+
+.markdown .math-inline { display: inline; }
+
+.markdown .math-error { color: var(--muted); }
+
+.markdown .katex-mathml {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Mermaid diagrams */
+.markdown .mermaid {
+  margin: 1.4em 0;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 1.2em;
+  overflow-x: auto;
+  overflow-y: visible;
+  max-width: 100%;
+}
+
+.markdown .mermaid svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  background: transparent;
+}
+
+/* =========================================================================
+   Novel-theme additions (library, lamplight)
+   ========================================================================= */
+
+html[data-theme='library'] .markdown kbd,
+html[data-theme='lamplight'] .markdown kbd {
+  background: var(--surface-2);
+  border-color: var(--border);
+  border-radius: 3px;
+  font-size: 0.78em;
+}
+
+html[data-theme='library'] .markdown mark:not([data-search-hit]),
+html[data-theme='lamplight'] .markdown mark:not([data-search-hit]) {
+  background: color-mix(in oklab, var(--accent) 18%, transparent);
+  color: var(--text);
+}
+
+html[data-theme='library'] .markdown details,
+html[data-theme='lamplight'] .markdown details {
+  background: transparent;
+  border: 0;
+  border-left: 2px solid var(--border);
+  border-radius: 0;
+  padding: 0 0 0 1em;
+}
+
+html[data-theme='library'] .markdown details[open],
+html[data-theme='lamplight'] .markdown details[open] { padding-bottom: 0; }
+
+html[data-theme='library'] .markdown summary,
+html[data-theme='lamplight'] .markdown summary {
+  font-style: italic;
+  font-family: var(--body-font);
+}
+
+html[data-theme='library'] .markdown dt,
+html[data-theme='lamplight'] .markdown dt { font-style: italic; }
+
+html[data-theme='library'] .markdown .footnotes,
+html[data-theme='lamplight'] .markdown .footnotes {
+  font-style: italic;
+  font-family: var(--body-font);
+}
+
+/* =========================================================================
+   Technical-theme additions (manual, console)
+   ========================================================================= */
+
+html[data-theme='manual'] .markdown kbd,
+html[data-theme='console'] .markdown kbd {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom: 2px solid color-mix(in oklab, var(--border) 140%, transparent);
+  box-shadow: 0 1px 0 var(--border-soft);
+  border-radius: 4px;
+}
+
+html[data-theme='manual'] .markdown mark:not([data-search-hit]),
+html[data-theme='console'] .markdown mark:not([data-search-hit]) {
+  background: var(--accent-soft);
+  color: var(--text);
+  border-radius: 3px;
+}
+
+html[data-theme='manual'] .markdown details,
+html[data-theme='console'] .markdown details {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0;
+}
+
+html[data-theme='manual'] .markdown details[open],
+html[data-theme='console'] .markdown details[open] { padding: 0; }
+
+html[data-theme='manual'] .markdown summary,
+html[data-theme='console'] .markdown summary {
+  padding: 0.6em 1em;
+  font-weight: 600;
+}
+
+html[data-theme='manual'] .markdown details[open] > summary,
+html[data-theme='console'] .markdown details[open] > summary {
+  border-bottom: 1px solid var(--border-soft);
+}
+
+html[data-theme='manual'] .markdown details > :not(summary),
+html[data-theme='console'] .markdown details > :not(summary) {
+  margin: 0.8em 1em 0;
+}
+
+html[data-theme='manual'] .markdown details[open] > :not(summary):last-child,
+html[data-theme='console'] .markdown details[open] > :not(summary):last-child {
+  margin-bottom: 0.8em;
+}
+
+/* =========================================================================
+   High-contrast additions
+   ========================================================================= */
+
+html[data-theme='contrast'] .markdown kbd {
+  background: var(--surface-2);
+  border: 2px solid var(--text);
+  border-radius: 0;
+  box-shadow: none;
+  font-weight: 600;
+}
+
+html[data-theme='contrast'] .markdown mark:not([data-search-hit]) {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-radius: 0;
+  padding: 0.05em 0.2em;
+}
+
+html[data-theme='contrast'] .markdown details {
+  border: 2px solid var(--border);
+  border-radius: 0;
+  background: var(--surface);
+}
+
+html[data-theme='contrast'] .markdown abbr[title] {
+  text-decoration: underline dotted var(--text);
+}
+
+html[data-theme='contrast'] .markdown input[type="checkbox"] {
+  border: 2px solid var(--text);
+  border-radius: 0;
+}
+
+html[data-theme='contrast'] .markdown h4 {
+  font-weight: 700;
+  color: var(--text);
+}
+
+html[data-theme='contrast'] .markdown h5,
+html[data-theme='contrast'] .markdown h6 {
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.08em;
+}
+
+html[data-theme='contrast'] .markdown a {
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--accent);
+}
+
+html[data-theme='contrast'] .markdown a:hover {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  text-decoration: none;
+  padding: 0 0.1em;
+}
+
+/* Mermaid per-theme container backgrounds */
+html[data-theme='library'] .markdown .mermaid {
+  background: #ffffff;
+  border-color: var(--border);
+}
+
+html[data-theme='manual'] .markdown .mermaid {
+  background: #ffffff;
+}
+
+html[data-theme='lamplight'] .markdown .mermaid {
+  background: #1e1a14;
+  border-color: var(--border);
+}
+
+html[data-theme='console'] .markdown .mermaid {
+  background: #161b22;
+  border-color: var(--border);
+}
+
+html[data-theme='contrast'] .markdown .mermaid {
+  background: #0a0a0a;
+  border: 2px solid var(--border);
+  border-radius: 0;
 }
 
 /* Search highlights */

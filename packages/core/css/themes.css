@@ -21,9 +21,9 @@ html[data-theme='library'] {
   --accent-soft: rgba(122, 58, 32, 0.10);
   --accent-contrast: #fbf3df;
   --shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 22px 56px -18px rgba(80, 50, 20, 0.20), 0 4px 12px -4px rgba(80, 50, 20, 0.10);
-  --ui-font: 'Inter', system-ui, sans-serif;
-  --body-font: 'Source Serif 4', 'Iowan Old Style', 'Cambria', Georgia, serif;
-  --mono-font: 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+  --ui-font: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --body-font: 'Source Serif 4 Variable', 'Source Serif 4', 'Iowan Old Style', 'Cambria', Georgia, serif;
+  --mono-font: 'JetBrains Mono Variable', 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
   --reader-width: 56ch;
   --font-size: 20px;
   --line-height: 1.82;

@@ -3,6 +3,14 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { THEMES, type ThemeId, type WebviewMessage } from '@doclume/core';
 
+/** Serialise data for embedding in a <script> tag safely (no </script> injection). */
+function safeJson(doc: { markdown: string; name: string }, theme: string): string {
+  return JSON.stringify({ ...doc, theme })
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+}
+
 function getNonce(): string {
   let text = '';
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -23,6 +31,26 @@ function isMarkdownLikeDocument(document: vscode.TextDocument): boolean {
 
 function findBuiltAsset(files: readonly string[], extension: string): string | undefined {
   return files.filter((file) => file.endsWith(extension)).sort((a, b) => a.localeCompare(b))[0];
+}
+
+let cachedWebviewAssets: { jsFile: string; cssFile: string } | null = null;
+
+function getBuiltWebviewAssets(assetsDir: vscode.Uri): { jsFile: string; cssFile: string } {
+  if (cachedWebviewAssets) return cachedWebviewAssets;
+
+  let jsFile = '';
+  let cssFile = '';
+
+  try {
+    const files = fs.readdirSync(assetsDir.fsPath);
+    jsFile = findBuiltAsset(files, '.js') || '';
+    cssFile = findBuiltAsset(files, '.css') || '';
+  } catch (e) {
+    console.error('Could not read assets directory:', e);
+  }
+
+  if (jsFile) cachedWebviewAssets = { jsFile, cssFile };
+  return cachedWebviewAssets ?? { jsFile, cssFile };
 }
 
 function themeFromWorkbench(): ThemeId {
@@ -47,21 +75,13 @@ function buildWebviewHtml(
   nonce: string,
   theme: ThemeId,
   baseUri?: string,
+  initialDoc?: { markdown: string; name: string },
 ): string {
   const distDir = vscode.Uri.joinPath(extensionUri, 'dist', 'webview');
 
   // Find the built JS and CSS files
   const assetsDir = vscode.Uri.joinPath(distDir, 'assets');
-  let jsFile = '';
-  let cssFile = '';
-
-  try {
-    const files = fs.readdirSync(assetsDir.fsPath);
-    jsFile = findBuiltAsset(files, '.js') || '';
-    cssFile = findBuiltAsset(files, '.css') || '';
-  } catch (e) {
-    console.error('Could not read assets directory:', e);
-  }
+  const { jsFile, cssFile } = getBuiltWebviewAssets(assetsDir);
 
   if (!jsFile) {
     return `<!DOCTYPE html>
@@ -124,20 +144,18 @@ function buildWebviewHtml(
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'none';
-    style-src ${webview.cspSource} 'nonce-${nonce}' 'unsafe-inline' https://fonts.googleapis.com;
+    style-src ${webview.cspSource} 'unsafe-inline';
     script-src 'nonce-${nonce}' ${webview.cspSource} 'unsafe-eval';
-    font-src ${webview.cspSource} https://fonts.gstatic.com;
+    font-src ${webview.cspSource};
     img-src ${webview.cspSource} https: data:;
   ">
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link nonce="${nonce}" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  ${cssUri ? `<link rel="stylesheet" nonce="${nonce}" href="${cssUri}" />` : ''}
+  ${cssUri ? `<link rel="stylesheet" href="${cssUri}" />` : ''}
   ${baseUri ? `<base href="${baseUri}">` : ''}
   <title>Doclume</title>
 </head>
 <body>
   <div id="root"></div>
+  ${initialDoc ? `<script nonce="${nonce}">window.__DOCLUME_INIT__=${safeJson(initialDoc, theme)};</script>` : ''}
   <script type="module" nonce="${nonce}" src="${jsUri}"></script>
 </body>
 </html>`;
@@ -241,15 +259,31 @@ export function activate(context: vscode.ExtensionContext): void {
       const nonce = getNonce();
       let theme = resolvePreviewTheme(config);
       const baseUri = panel.webview.asWebviewUri(vscode.Uri.file(path.dirname(document.fileName))).toString() + '/';
-      panel.webview.html = buildWebviewHtml(panel.webview, context.extensionUri, nonce, theme, baseUri);
+      const initialDoc = { markdown: document.getText(), name: path.basename(document.fileName) };
+      panel.webview.html = buildWebviewHtml(panel.webview, context.extensionUri, nonce, theme, baseUri, initialDoc);
 
-      const sendUpdate = (): void => {
+      const sendUpdateNow = (): void => {
         const msg: WebviewMessage = {
           type: 'update',
           markdown: document.getText(),
           name: path.basename(document.fileName),
         };
         panel.webview.postMessage(msg);
+      };
+
+      let updateTimer: ReturnType<typeof setTimeout> | undefined;
+      let webviewReady = false;
+      let pendingUpdate = false;
+      const queueUpdate = (): void => {
+        if (updateTimer) clearTimeout(updateTimer);
+        updateTimer = setTimeout(() => {
+          updateTimer = undefined;
+          if (!webviewReady) {
+            pendingUpdate = true;
+            return;
+          }
+          sendUpdateNow();
+        }, 120);
       };
 
       const sendTheme = (id: ThemeId): void => {
@@ -260,14 +294,19 @@ export function activate(context: vscode.ExtensionContext): void {
       // Send initial content once webview signals ready
       panel.webview.onDidReceiveMessage((msg) => {
         if (msg.type === 'ready') {
+          webviewReady = true;
           sendTheme(theme);
-          sendUpdate();
+          sendUpdateNow();
+          if (pendingUpdate) {
+            pendingUpdate = false;
+            sendUpdateNow();
+          }
         }
       });
 
       // Watch for document changes
       const docListener = vscode.workspace.onDidChangeTextDocument((e) => {
-        if (e.document === document) sendUpdate();
+        if (e.document === document) queueUpdate();
       });
 
       // Watch for config changes
@@ -288,6 +327,7 @@ export function activate(context: vscode.ExtensionContext): void {
       });
 
       panel.onDidDispose(() => {
+        if (updateTimer) clearTimeout(updateTimer);
         docListener.dispose();
         configListener.dispose();
         colorThemeListener.dispose();
