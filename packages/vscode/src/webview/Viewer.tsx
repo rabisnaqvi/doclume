@@ -81,6 +81,15 @@ export function Viewer() {
     import('mermaid').then(async ({ default: mermaid }) => {
       if (cancelled) return;
       mermaid.initialize({ startOnLoad: false, theme: getMermaidTheme(theme), securityLevel: 'loose' });
+      if (!mermaidReady) {
+        await Promise.allSettled(
+          nodes.map((node) => {
+            const code = node.dataset.src ?? node.textContent ?? '';
+            return code.trim() ? mermaid.parse(code) : Promise.resolve();
+          })
+        );
+        mermaidReady = true;
+      }
       if (cancelled) return;
       for (let i = 0; i < nodes.length; i++) {
         if (cancelled) return;

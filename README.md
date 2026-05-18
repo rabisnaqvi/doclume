@@ -75,15 +75,13 @@ Serif fonts for long-form prose. Proper line lengths. Themes that don't feel lik
 
 ## Markdown
 
-Same pipeline in the **web app** and the **VS Code** preview:
+Doclume reads markdown the way you meant it to look—**one experience in the browser and in VS Code**, so the preview beside your editor matches what you’d share from the web app.
 
-- **GFM** tables, task lists, strikethrough
-- **Syntax highlighting** (many languages via highlight.js)
-- **Mermaid** — fenced code blocks with language `mermaid`
-- **Math (KaTeX)** — display `$$…$$`, inline `$…$`
-- **Footnotes** — `[^1]` / `[^note]:` style
-- **Definition lists** — term on one line, definitions starting with `: `
-- **Word count** and **estimated reading time** (web app UI)
+- **Tables & tasks** — ship specs and changelogs without fighting the layout
+- **Code blocks** — syntax-colored fences that stay readable on every theme
+- **Diagrams** — Mermaid in the preview, no round-trip to another tool
+- **Math** — crisp formulas with KaTeX
+- **Notes & glossaries** — footnotes and definition lists when the doc calls for them
 
 ---
 
@@ -96,12 +94,13 @@ Open markdown in any browser — no install, no account, no friction.
 - Paste markdown or open a local `.md`, `.prompt`, `.instructions`, `.chatagent`, or `.skill` file
 - Pick a theme, read comfortably
 - **Outline** (table of contents) and **in-document search** (`Ctrl+F` / `Cmd+F`)
+- **Word count** and **estimated reading time** at a glance
 
 ---
 
 ## VS Code extension
 
-Live preview beside your editor; content updates as you edit (same Markdown features as above). Fonts load from the extension bundle (no Google Fonts fetch in the webview).
+Live preview beside your editor; updates as you type. **Same rendering as the web reader**—tables, diagrams, math, footnotes—so nothing surprises you at publish time. Fonts ship with the extension (no Google Fonts fetch in the webview).
 
 **Install:**
 ```sh

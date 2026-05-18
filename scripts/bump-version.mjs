@@ -34,6 +34,49 @@ function parseSemver(v) {
   };
 }
 
+/** @param {string} id */
+function isNumericPrereleaseIdentifier(id) {
+  return /^[0-9]+$/.test(id);
+}
+
+/** @param {string} x @param {string} y */
+function comparePrereleaseIdentifier(x, y) {
+  const xNum = isNumericPrereleaseIdentifier(x);
+  const yNum = isNumericPrereleaseIdentifier(y);
+  if (xNum && yNum) {
+    const bx = BigInt(x);
+    const by = BigInt(y);
+    if (bx < by) return -1;
+    if (bx > by) return 1;
+    return 0;
+  }
+  if (xNum && !yNum) return -1;
+  if (!xNum && yNum) return 1;
+  return x < y ? -1 : x > y ? 1 : 0;
+}
+
+/**
+ * SemVer 2.0.0 prerelease precedence: dot-separated identifiers; numeric ids compared numerically;
+ * numeric id always lower than non-numeric; longer tuple wins if prefixes equal.
+ * @param {string} pa
+ * @param {string} pb
+ */
+function comparePrerelease(pa, pb) {
+  const aIds = pa.split('.');
+  const bIds = pb.split('.');
+  const n = Math.max(aIds.length, bIds.length);
+  for (let i = 0; i < n; i++) {
+    const ai = aIds[i];
+    const bi = bIds[i];
+    if (ai === undefined && bi === undefined) return 0;
+    if (ai === undefined) return -1;
+    if (bi === undefined) return 1;
+    const c = comparePrereleaseIdentifier(ai, bi);
+    if (c !== 0) return c;
+  }
+  return 0;
+}
+
 /** @param {SemVer} a @param {SemVer} b */
 function compareSemver(a, b) {
   if (a.major !== b.major) return a.major - b.major;
@@ -44,7 +87,7 @@ function compareSemver(a, b) {
   if (pa === pb) return 0;
   if (!pa && pb) return 1;
   if (pa && !pb) return -1;
-  return pa < pb ? -1 : pa > pb ? 1 : 0;
+  return comparePrerelease(pa, pb);
 }
 
 /** @param {SemVer} s */

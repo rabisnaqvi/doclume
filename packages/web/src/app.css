@@ -650,8 +650,8 @@ a.btn:hover { border-bottom: none; }
   gap: 10px 14px;
 }
 
-/* Right rail duplicates these — hide in reader chrome when rail is visible (see .rail breakpoint) */
-@media (min-width: 1101px) {
+/* Right rail duplicates these — hide header stats iff rail column shown (same threshold as .rail hide below) */
+@media (width > 1100px) {
   .workspace:has(> .rail) .reader__header__stats-row {
     display: none;
   }
@@ -908,7 +908,7 @@ body.is-focus .focus-exit:hover { opacity: 1; }
   .btn--collapsible { padding-inline: 9px; }
 }
 
-@media (max-width: 1100px) {
+@media (width <= 1100px) {
   .workspace:not(.workspace--no-toc) { grid-template-columns: minmax(200px, 240px) minmax(0, 1fr); }
   .rail { display: none; }
 }

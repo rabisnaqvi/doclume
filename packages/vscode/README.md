@@ -31,7 +31,7 @@
 
 ---
 
-**A markdown preview that respects typography.** Five hand-crafted reading themes — serif for long-form, sans for technical docs, dark and light variants, plus high contrast for accessibility. Opens beside your editor; content updates as you edit. Reading fonts ship with the extension (no external font CDN in the webview).
+**A markdown preview that respects typography.** Same reader as the [Doclume web app](https://doclume.rabisnaqvi.workers.dev/)—tables, diagrams, math, and footnotes look the same in the browser and beside your editor. Five hand-crafted reading themes — serif for long-form, sans for technical docs, dark and light variants, plus high contrast for accessibility. Opens beside your editor; content updates as you edit. Reading fonts ship with the extension (no external font CDN in the webview).
 
 → [GitHub](https://github.com/rabisnaqvi/doclume)
 
@@ -39,7 +39,13 @@
 
 ## Markdown
 
-The preview uses the same core renderer as the [web app](https://doclume.rabisnaqvi.workers.dev/): GFM-style tables and task lists, **syntax highlighting**, **Mermaid** (fenced code blocks with language `mermaid`), **KaTeX** math (`$$…$$` display, `$…$` inline), **footnotes**, and **definition lists** (term + `: ` definition lines).
+The preview uses the **same reader as the [web app](https://doclume.rabisnaqvi.workers.dev/)**—what you see beside your editor matches the browser experience.
+
+- **Tables & tasks** — ship specs and changelogs without fighting the layout
+- **Code blocks** — syntax-colored fences that stay readable on every theme
+- **Diagrams** — Mermaid in the preview, no round-trip to another tool
+- **Math** — crisp formulas with KaTeX
+- **Notes & glossaries** — footnotes and definition lists when the doc calls for them
 
 ---
 

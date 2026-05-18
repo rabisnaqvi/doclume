@@ -379,7 +379,7 @@ function Topbar({
               <Icon name="search" size={14} />
             </button>
           )}
-          <button className="btn btn--ghost btn--collapsible" onClick={onOpen} title="Open .md file (⌘O)">
+          <button className="btn btn--ghost btn--collapsible" onClick={onOpen} title="Open markdown, text, or prompt-like files (.md, .txt, .prompt, …) (⌘O)">
             <Icon name="file" size={14} /> <span className="btn--collapsible-label">Open</span>
           </button>
           <button className="btn btn--ghost btn--collapsible" onClick={onPaste} title="Paste markdown">
@@ -404,7 +404,7 @@ function EmptyState({ onOpen, onPaste, onSample }: { onOpen: () => void; onPaste
         <img src="/favicon.svg" className="empty__mark" alt="Doclume"/>
         <h1 className="empty__title">Open a document in Doclume.</h1>
         <p className="empty__sub">
-          Drop a markdown file into Doclume, open one from disk, or paste raw markdown.
+          Drop or open a markdown or plain-text file (.md, .markdown, .txt, …) or a `.prompt`, `.instructions`, `.chatagent`, or `.skill` file. Or paste raw markdown.
           Doclume remembers your last document, theme, and view settings.
         </p>
         <div className="empty__actions">
@@ -799,7 +799,7 @@ export function App() {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".md,.markdown,.mdown,.mkdn,.txt,text/markdown,text/plain"
+        accept=".md,.markdown,.mdown,.mkdn,.txt,.prompt,.instructions,.chatagent,.skill,text/markdown,text/plain"
         style={{ display: 'none' }}
         onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) readFile(f); }}
       />
@@ -808,7 +808,7 @@ export function App() {
 
       {dragActive && (
         <div className="drop-overlay">
-          <div className="drop-overlay__inner">Drop your markdown file to open</div>
+          <div className="drop-overlay__inner">Drop a markdown, text, or prompt file to open</div>
         </div>
       )}
     </>

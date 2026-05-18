@@ -2,26 +2,57 @@ import { marked, Renderer } from 'marked';
 import markedFootnote from 'marked-footnote';
 import hljs from 'highlight.js/lib/core';
 import bash from 'highlight.js/lib/languages/bash';
+import c from 'highlight.js/lib/languages/c';
+import cpp from 'highlight.js/lib/languages/cpp';
+import csharp from 'highlight.js/lib/languages/csharp';
 import css from 'highlight.js/lib/languages/css';
 import diff from 'highlight.js/lib/languages/diff';
+import dockerfile from 'highlight.js/lib/languages/dockerfile';
+import go from 'highlight.js/lib/languages/go';
+import java from 'highlight.js/lib/languages/java';
 import javascript from 'highlight.js/lib/languages/javascript';
 import json from 'highlight.js/lib/languages/json';
+import kotlin from 'highlight.js/lib/languages/kotlin';
+import makefile from 'highlight.js/lib/languages/makefile';
 import markdown from 'highlight.js/lib/languages/markdown';
+import php from 'highlight.js/lib/languages/php';
 import python from 'highlight.js/lib/languages/python';
+import ruby from 'highlight.js/lib/languages/ruby';
+import rust from 'highlight.js/lib/languages/rust';
+import scss from 'highlight.js/lib/languages/scss';
+import shell from 'highlight.js/lib/languages/shell';
+import sql from 'highlight.js/lib/languages/sql';
+import swift from 'highlight.js/lib/languages/swift';
 import typescript from 'highlight.js/lib/languages/typescript';
 import xml from 'highlight.js/lib/languages/xml';
 import yaml from 'highlight.js/lib/languages/yaml';
 import type { ThemeId } from './types.js';
-import { slugifyHeading } from './toc.js';
+import { createHeadingSlugAllocator } from './toc.js';
 
+/** Curated highlight.js grammars (core build); `bash` before `shell` (shell session embeds bash). */
 const HIGHLIGHT_LANGUAGES: Array<[string, any]> = [
   ['bash', bash],
+  ['c', c],
+  ['cpp', cpp],
+  ['csharp', csharp],
   ['css', css],
   ['diff', diff],
+  ['dockerfile', dockerfile],
+  ['go', go],
+  ['java', java],
   ['javascript', javascript],
   ['json', json],
+  ['kotlin', kotlin],
+  ['makefile', makefile],
   ['markdown', markdown],
+  ['php', php],
   ['python', python],
+  ['ruby', ruby],
+  ['rust', rust],
+  ['scss', scss],
+  ['shell', shell],
+  ['sql', sql],
+  ['swift', swift],
   ['typescript', typescript],
   ['xml', xml],
   ['yaml', yaml],
@@ -44,6 +75,8 @@ const LANGUAGE_ALIASES: Record<string, string> = {
   xml: 'xml',
   md: 'markdown',
   py: 'python',
+  docker: 'dockerfile',
+  mk: 'makefile',
 };
 
 type KatexRuntime = {
@@ -217,11 +250,6 @@ export function configureMarked(): void {
   const renderer = new Renderer();
   const defaultTable = renderer.table.bind(renderer);
 
-  renderer.heading = function (text: string, level: number): string {
-    const slug = slugifyHeading(text);
-    return `<h${level} id="${slug}">${text}</h${level}>\n`;
-  };
-
   renderer.code = function (code: string, lang: string | undefined): string {
     return renderCodeBlock(code, lang);
   };
@@ -237,7 +265,19 @@ export function configureMarked(): void {
 
 export function renderMarkdown(markdown: string): string {
   configureMarked();
-  try { return marked.parse(stripFrontMatter(markdown)) as string; }
+  const nextSlug = createHeadingSlugAllocator();
+  const baseRenderer = marked.defaults.renderer;
+  if (!baseRenderer) {
+    return `<p style="color:var(--muted)">Could not render markdown: renderer not configured</p>`;
+  }
+  const renderer = Object.assign(Object.create(Object.getPrototypeOf(baseRenderer)), baseRenderer);
+  renderer.heading = function (text: string, level: number, raw?: string): string {
+    const slug = nextSlug(String(raw ?? text));
+    return `<h${level} id="${slug}">${text}</h${level}>\n`;
+  };
+  try {
+    return marked.parse(stripFrontMatter(markdown), { renderer }) as string;
+  }
   catch (e) {
     return `<p style="color:var(--muted)">Could not render markdown: ${escapeHtml((e as Error).message)}</p>`;
   }
