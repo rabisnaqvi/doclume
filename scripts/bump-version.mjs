@@ -131,21 +131,26 @@ function formatReleaseDate(d) {
   return `${y}-${m}-${day}`;
 }
 
+/** Line-start changelog section headings only (avoids `## [Unreleased]` in intro backticks). */
+const CHANGELOG_HEADING_RE = /^## \[[^\]]+\](?:\s|$)/m;
+
 /**
  * Split CHANGELOG around ## [Unreleased]: pre (inclusive of intro), body, post (from next ## […] onward).
  * @param {string} full
  */
 function parseChangelogUnreleased(full) {
-  const marker = '## [Unreleased]';
-  const i = full.indexOf(marker);
-  if (i === -1) throw new Error('CHANGELOG.md: missing "## [Unreleased]" heading');
+  const unreleasedRe = /^## \[Unreleased\]\s*$/m;
+  const markerMatch = unreleasedRe.exec(full);
+  if (!markerMatch) throw new Error('CHANGELOG.md: missing "## [Unreleased]" heading');
+  const i = markerMatch.index;
+  const markerLen = markerMatch[0].length;
   const pre = full.slice(0, i);
-  const afterMarker = i + marker.length;
+  const afterMarker = i + markerLen;
   const tail = full.slice(afterMarker);
   const leadingNl = tail.match(/^\r?\n/)?.[0]?.length ?? 0;
   const bodyStart = afterMarker + leadingNl;
   const searchFrom = full.slice(bodyStart);
-  const nextMatch = /\r?\n## \[[^\]]+\]/.exec(searchFrom);
+  const nextMatch = CHANGELOG_HEADING_RE.exec(searchFrom);
   if (!nextMatch) {
     return { pre, body: searchFrom.replace(/\s+$/, ''), post: '' };
   }

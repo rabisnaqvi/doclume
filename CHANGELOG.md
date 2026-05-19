@@ -11,12 +11,6 @@ Monorepo releases use one version across the repo root, `@doclume/core`, `@doclu
 
 ### Added
 
-### Changed
-
-## [0.2.0] - 2026-05-18
-
-### Added
-
 - **Core:** LaTeX-style math via KaTeX — display `$$…$$`, inline `$…$`.
 - **Core:** Mermaid diagrams from fenced blocks with language `mermaid`.
 - **Core:** GitHub-style footnotes (`marked-footnote`) and PHP Markdown Extra–style definition lists (`term` + `: definition` lines).
