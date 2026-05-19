@@ -31,28 +31,21 @@ function isMarkdownLikeDocument(document: vscode.TextDocument): boolean {
   return MARKDOWN_LIKE.test(document.languageId) || SUPPORTED_MARKDOWN_EXTENSIONS.some((extension) => fileName.endsWith(extension));
 }
 
-function findBuiltAsset(files: readonly string[], extension: string): string | undefined {
-  return files.filter((file) => file.endsWith(extension)).sort((a, b) => a.localeCompare(b))[0];
+function findBuiltAsset(files: readonly string[], pattern: RegExp): string {
+  return files.filter((file) => pattern.test(file)).sort((a, b) => a.localeCompare(b))[0] ?? '';
 }
 
-let cachedWebviewAssets: { jsFile: string; cssFile: string } | null = null;
-
 function getBuiltWebviewAssets(assetsDir: vscode.Uri): { jsFile: string; cssFile: string } {
-  if (cachedWebviewAssets) return cachedWebviewAssets;
-
-  let jsFile = '';
-  let cssFile = '';
-
   try {
     const files = fs.readdirSync(assetsDir.fsPath);
-    jsFile = findBuiltAsset(files, '.js') || '';
-    cssFile = findBuiltAsset(files, '.css') || '';
+    return {
+      jsFile: findBuiltAsset(files, /^index-.*\.js$/),
+      cssFile: findBuiltAsset(files, /^index-.*\.css$/),
+    };
   } catch (e) {
     console.error('Could not read assets directory:', e);
+    return { jsFile: '', cssFile: '' };
   }
-
-  if (jsFile) cachedWebviewAssets = { jsFile, cssFile };
-  return cachedWebviewAssets ?? { jsFile, cssFile };
 }
 
 function themeFromWorkbench(): ThemeId {
