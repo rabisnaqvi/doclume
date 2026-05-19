@@ -1,7 +1,20 @@
 import type { TocEntry } from './types.js';
 
+const FRONT_MATTER_START = /^---\r?\n/;
+const FRONT_MATTER_END = /\r?\n(?:---|\.\.\.)\r?\n?/;
+const YAML_KEY_LINE = /^[A-Za-z0-9_-]+:\s*.*$/m;
+
 export function stripFrontMatter(markdown: string): string {
-  return markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
+  const opening = markdown.match(FRONT_MATTER_START);
+  if (!opening || opening.index !== 0) return markdown;
+
+  const closing = markdown.match(FRONT_MATTER_END);
+  if (!closing || closing.index == null) return markdown;
+
+  const body = markdown.slice(opening[0].length, closing.index);
+  if (!YAML_KEY_LINE.test(body)) return markdown;
+
+  return markdown.slice(closing.index + closing[0].length);
 }
 
 export function slugifyHeading(text: string): string {
