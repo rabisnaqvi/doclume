@@ -1,7 +1,7 @@
-# Basic Fixture
+# Basic document
 
-A short markdown document for smoke tests.
+This is a short document for smoke coverage.
 
-- One
-- Two
-- Three
+- one
+- two
+- three

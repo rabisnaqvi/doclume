@@ -1,8 +1,8 @@
-# Mermaid Fixture
+# Mermaid fixture
 
 ```mermaid
 flowchart TD
-  A[Start] --> B{Ready?}
-  B -->|Yes| C[Done]
-  B -->|No| D[Retry]
+  A[Start] --> B{Visible?}
+  B -->|Yes| C[Render]
+  B -->|No| D[Investigate]
 ```
