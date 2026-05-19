@@ -1,7 +1,16 @@
 import type { ThemeId } from './types.js';
 import { sanitizeMermaidSvg } from './sanitize.js';
 
-let mermaidWarm = false;
+let mermaidBootstrap: Promise<void> | null = null;
+
+async function ensureMermaidBootstrap(mermaid: { parse: (code: string) => Promise<unknown> }): Promise<void> {
+  if (!mermaidBootstrap) {
+    mermaidBootstrap = mermaid
+      .parse('flowchart TD\nA[Doclume]-->B[Ready]')
+      .then(() => undefined, () => undefined);
+  }
+  await mermaidBootstrap;
+}
 
 export function getMermaidTheme(theme: ThemeId): 'dark' | 'neutral' {
   return (theme === 'lamplight' || theme === 'console' || theme === 'contrast') ? 'dark' : 'neutral';
@@ -34,15 +43,9 @@ export async function renderMermaidDiagrams(
       htmlLabels: false,
     });
 
-    if (!mermaidWarm) {
-      await Promise.allSettled(
-        nodes.map((node) => {
-          const code = node.dataset.src ?? node.textContent ?? '';
-          return code.trim() ? mermaid.parse(code) : Promise.resolve();
-        }),
-      );
-      mermaidWarm = true;
-    }
+    if (aborted()) return;
+
+    await ensureMermaidBootstrap(mermaid);
     if (aborted()) return;
 
     for (let i = 0; i < nodes.length; i++) {
