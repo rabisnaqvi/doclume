@@ -14,10 +14,21 @@
     "build:ext": "pnpm --filter doclume build",
     "package:ext": "pnpm --filter doclume package",
     "publish:ext": "pnpm --filter doclume publish",
+    "test": "pnpm test:core && pnpm test:web && pnpm test:vscode",
+    "test:core": "vitest run --config vitest.config.ts",
+    "test:web": "playwright test --config tests/web/playwright.config.ts",
+    "test:vscode:smoke": "node tests/vscode/smoke/run.mjs",
+    "test:vscode:visual": "playwright test --config tests/vscode/playwright.config.ts",
+    "test:vscode": "pnpm test:vscode:smoke && pnpm test:vscode:visual",
+    "test:update-snapshots": "pnpm test:web -- --update-snapshots && pnpm test:vscode:visual -- --update-snapshots",
     "typecheck": "tsc --build"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@resvg/resvg-js": "^2.6.2",
-    "typescript": "^5.5.3"
+    "@vscode/test-electron": "^2.5.2",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.5.3",
+    "vitest": "^4.1.6"
   }
 }
