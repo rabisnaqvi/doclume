@@ -65,4 +65,4 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install chromium
-      - run: pnpm test:vscode
+      - run: xvfb-run -a --server-args="-screen 0 1920x1080x24" pnpm test:vscode
