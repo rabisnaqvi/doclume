@@ -8,13 +8,16 @@ export function slugifyHeading(text: string): string {
   return String(text).toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
 }
 
+const EMPTY_SLUG_FALLBACK = 'heading';
+
 /**
  * Heading ids in document order: first `foo`, then `foo-1`, `foo-2`, … (GitHub-style).
  */
 export function createHeadingSlugAllocator(): (plainHeadingText: string) => string {
   const counts = new Map<string, number>();
   return (plainHeadingText: string) => {
-    const base = slugifyHeading(plainHeadingText);
+    const slug = slugifyHeading(plainHeadingText);
+    const base = slug.length > 0 ? slug : EMPTY_SLUG_FALLBACK;
     const n = (counts.get(base) ?? 0) + 1;
     counts.set(base, n);
     if (n === 1) return base;

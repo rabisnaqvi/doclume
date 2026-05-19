@@ -81,9 +81,10 @@ function clearHighlights(root: Element): void {
 }
 
 function highlightMatches(root: Element, query: string): HTMLElement[] {
-  if (!root || !query) return [];
+  const q = query.trim();
+  if (!root || !q) return [];
   const matches: HTMLElement[] = [];
-  const needle = query.toLowerCase();
+  const needle = q.toLowerCase();
 
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
@@ -105,7 +106,7 @@ function highlightMatches(root: Element, query: string): HTMLElement[] {
 
   candidates.forEach((node) => {
     const text = node.nodeValue!;
-    const localRe = new RegExp(escapeRegExp(query), 'gi');
+    const localRe = new RegExp(escapeRegExp(q), 'gi');
     let lastIndex = 0;
     let m: RegExpExecArray | null;
     const frag = document.createDocumentFragment();
@@ -338,7 +339,7 @@ function Topbar({
                 }
               }}
             />
-            {searchQuery && (
+            {searchQuery.trim() && (
               <span className="search__count">
                 {searchCount === 0 ? '0' : `${searchIndex + 1} / ${searchCount}`}
               </span>
