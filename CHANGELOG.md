@@ -12,6 +12,10 @@ Monorepo releases use one version across the repo root, `@doclume/core`, `@doclu
 ### Added
 
 ### Changed
+- Markdown rendering now strips front matter, preserves inline formatting in definition lists, and handles code blocks more safely.
+- Mermaid diagrams are initialized up front so the first diagram renders reliably.
+- The web preview now uses a refreshed reader-style layout with sidebar navigation.
+- The VS Code viewer now shares the updated markdown and Mermaid rendering behavior for more consistent previews.
 
 
 ## [0.1.1] - 2026-05-16
