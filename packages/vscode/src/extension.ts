@@ -278,15 +278,11 @@ export function activate(context: vscode.ExtensionContext): void {
 
       let updateTimer: ReturnType<typeof setTimeout> | undefined;
       let webviewReady = false;
-      let pendingUpdate = false;
       const queueUpdate = (): void => {
         if (updateTimer) clearTimeout(updateTimer);
         updateTimer = setTimeout(() => {
           updateTimer = undefined;
-          if (!webviewReady) {
-            pendingUpdate = true;
-            return;
-          }
+          if (!webviewReady) return;
           sendUpdateNow();
         }, 120);
       };
@@ -301,7 +297,6 @@ export function activate(context: vscode.ExtensionContext): void {
         if (msg.type === 'ready') {
           webviewReady = true;
           sendTheme(theme);
-          pendingUpdate = false;
           sendUpdateNow();
         }
       });

@@ -45,9 +45,6 @@ importers:
       '@doclume/core':
         specifier: workspace:*
         version: link:../core
-      mermaid:
-        specifier: ^11.15.0
-        version: 11.15.0
     devDependencies:
       '@fontsource-variable/inter':
         specifier: ^5.2.8
@@ -100,12 +97,6 @@ importers:
       '@doclume/core':
         specifier: workspace:*
         version: link:../core
-      marked:
-        specifier: ^12.0.2
-        version: 12.0.2
-      mermaid:
-        specifier: ^11.15.0
-        version: 11.15.0
       react:
         specifier: ^18.3.1
         version: 18.3.1
