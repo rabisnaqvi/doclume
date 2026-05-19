@@ -29,6 +29,9 @@ importers:
       marked-footnote:
         specifier: ^1.4.0
         version: 1.4.0(marked@12.0.2)
+      mermaid:
+        specifier: ^11.15.0
+        version: 11.15.0
     devDependencies:
       typescript:
         specifier: ^5.5.3

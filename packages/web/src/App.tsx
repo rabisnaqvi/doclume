@@ -2,10 +2,9 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffe
 import {
   THEMES,
   configureMarked,
-  renderMarkdown,
-  extractToc,
+  renderMarkdownWithMeta,
+  renderMermaidDiagrams,
   estimateReadingTime,
-  getMermaidTheme,
   MATH_READY_EVENT,
   type Theme,
   type ThemeId,
@@ -18,9 +17,6 @@ import { DocumentShell } from './components/DocumentShell.js';
 import { Icon } from './components/Icon.js';
 import { ReaderPane } from './components/ReaderPane.js';
 import { Sidebar, SidebarRail } from './components/Sidebar.js';
-
-// Tracks whether mermaid parsers have been warmed up this session.
-let mermaidReady = false;
 
 const PREFS_KEY = 'doclume-prefs-v1';
 const DOC_KEY = 'doclume-last-doc-v1';
@@ -87,7 +83,7 @@ function clearHighlights(root: Element): void {
 function highlightMatches(root: Element, query: string): HTMLElement[] {
   if (!root || !query) return [];
   const matches: HTMLElement[] = [];
-  const re = new RegExp(escapeRegExp(query), 'gi');
+  const needle = query.toLowerCase();
 
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
@@ -97,7 +93,9 @@ function highlightMatches(root: Element, query: string): HTMLElement[] {
         if (['SCRIPT', 'STYLE', 'MARK'].includes((p as Element).nodeName)) return NodeFilter.FILTER_REJECT;
         p = p.parentNode;
       }
-      return re.test(node.nodeValue!) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      return node.nodeValue!.toLowerCase().includes(needle)
+        ? NodeFilter.FILTER_ACCEPT
+        : NodeFilter.FILTER_REJECT;
     },
   });
 
@@ -510,7 +508,6 @@ export function App() {
   const searchMatchesRef = useRef<HTMLElement[]>([]);
   const [mathVersion, bumpMathVersion] = useReducer((v: number) => v + 1, 0);
 
-  const toc = useMemo(() => (doc.markdown ? extractToc(doc.markdown) : []), [doc.markdown]);
   const [activeId, setActiveId] = useState('');
   const contentRef = useRef<HTMLElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -533,44 +530,16 @@ export function App() {
     return () => window.removeEventListener(MATH_READY_EVENT, onMathReady);
   }, []);
 
-  const renderedHtml = useMemo(() => {
-    if (!doc.markdown) return '';
-    return renderMarkdown(doc.markdown);
+  const { renderedHtml, toc } = useMemo(() => {
+    if (!doc.markdown) return { renderedHtml: '', toc: [] };
+    const { html, toc: nextToc } = renderMarkdownWithMeta(doc.markdown);
+    return { renderedHtml: html, toc: nextToc };
   }, [doc.markdown, mathVersion]);
 
   useEffect(() => {
-    const nodes = Array.from(
-      contentRef.current?.querySelectorAll<HTMLElement>('.mermaid') ?? []
-    );
-    if (!nodes.length) return;
-    let cancelled = false;
-    import('mermaid').then(async ({ default: mermaid }) => {
-      if (cancelled) return;
-      mermaid.initialize({ startOnLoad: false, theme: getMermaidTheme(theme), securityLevel: 'loose' });
-      if (!mermaidReady) {
-        await Promise.allSettled(nodes.map(node => {
-          const code = node.dataset.src ?? node.textContent ?? '';
-          return code.trim() ? mermaid.parse(code) : Promise.resolve();
-        }));
-        mermaidReady = true;
-      }
-      if (cancelled) return;
-      for (let i = 0; i < nodes.length; i++) {
-        if (cancelled) return;
-        const node = nodes[i];
-        const code = node.dataset.src ?? node.textContent ?? '';
-        if (!code.trim()) continue;
-        const renderId = `mermaid-${i}-${Date.now()}`;
-        try {
-          const { svg, bindFunctions } = await mermaid.render(renderId, code);
-          if (cancelled) return;
-          node.innerHTML = svg;
-          bindFunctions?.(node);
-        } catch { /* leave raw code on parse error */ }
-        finally { document.getElementById(`d${renderId}`)?.remove(); }
-      }
-    }).catch(() => {});
-    return () => { cancelled = true; };
+    const ac = new AbortController();
+    void renderMermaidDiagrams(contentRef.current, theme, { signal: ac.signal });
+    return () => ac.abort();
   }, [renderedHtml, theme]);
 
   useEffect(() => {

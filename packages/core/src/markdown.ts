@@ -26,8 +26,14 @@ import swift from 'highlight.js/lib/languages/swift';
 import typescript from 'highlight.js/lib/languages/typescript';
 import xml from 'highlight.js/lib/languages/xml';
 import yaml from 'highlight.js/lib/languages/yaml';
-import type { ThemeId } from './types.js';
-import { createHeadingSlugAllocator } from './toc.js';
+import type { TocEntry } from './types.js';
+import {
+  createHeadingSlugAllocator,
+  stripFrontMatter,
+  headingSlugInput,
+  headingDisplayText,
+  extractTocFromDom,
+} from './toc.js';
 
 /** Curated highlight.js grammars (core build); `bash` before `shell` (shell session embeds bash). */
 const HIGHLIGHT_LANGUAGES: Array<[string, any]> = [
@@ -122,12 +128,9 @@ export function escapeHtml(s: string): string {
   return String(s).replace(/[&<>"']/g, (c) => map[c] ?? c);
 }
 
-function stripFrontMatter(markdown: string): string {
-  return markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
-}
-
-export function getMermaidTheme(theme: ThemeId): 'dark' | 'neutral' {
-  return (theme === 'lamplight' || theme === 'console' || theme === 'contrast') ? 'dark' : 'neutral';
+export interface MarkdownResult {
+  html: string;
+  toc: TocEntry[];
 }
 
 /* ── Extensions ── */
@@ -204,13 +207,12 @@ const deflist = {
     const items = token.items as DeflistItem[];
     let html = '<dl>\n';
     for (const { term, defs } of items) {
-      html += `<dt>${term}</dt>\n`;
-      for (const def of defs) html += `<dd>${def}</dd>\n`;
+      html += `<dt>${escapeHtml(term)}</dt>\n`;
+      for (const def of defs) html += `<dd>${escapeHtml(def)}</dd>\n`;
     }
     return html + '</dl>\n';
   },
 };
-
 function normalizeLanguage(lang: string | undefined): string | undefined {
   if (!lang) return undefined;
   const lowered = lang.toLowerCase();
@@ -263,22 +265,45 @@ export function configureMarked(): void {
   marked.use(markedFootnote());
 }
 
-export function renderMarkdown(markdown: string): string {
+function parseMarkdownDocument(markdown: string): MarkdownResult {
   configureMarked();
+  const toc: TocEntry[] = [];
   const nextSlug = createHeadingSlugAllocator();
   const baseRenderer = marked.defaults.renderer;
   if (!baseRenderer) {
-    return `<p style="color:var(--muted)">Could not render markdown: renderer not configured</p>`;
+    return {
+      html: `<p style="color:var(--muted)">Could not render markdown: renderer not configured</p>`,
+      toc: [],
+    };
   }
   const renderer = Object.assign(Object.create(Object.getPrototypeOf(baseRenderer)), baseRenderer);
   renderer.heading = function (text: string, level: number, raw?: string): string {
-    const slug = nextSlug(String(raw ?? text));
+    const plain = headingSlugInput(text, raw);
+    const slug = nextSlug(plain);
+    toc.push({ id: slug, level, text: headingDisplayText(text, raw) });
     return `<h${level} id="${slug}">${text}</h${level}>\n`;
   };
   try {
-    return marked.parse(stripFrontMatter(markdown), { renderer }) as string;
-  }
-  catch (e) {
-    return `<p style="color:var(--muted)">Could not render markdown: ${escapeHtml((e as Error).message)}</p>`;
+    const html = marked.parse(stripFrontMatter(markdown), { renderer }) as string;
+    return { html, toc };
+  } catch (e) {
+    return {
+      html: `<p style="color:var(--muted)">Could not render markdown: ${escapeHtml((e as Error).message)}</p>`,
+      toc: [],
+    };
   }
 }
+
+export function renderMarkdownWithMeta(markdown: string): MarkdownResult {
+  return parseMarkdownDocument(markdown);
+}
+
+export function renderMarkdown(markdown: string): string {
+  return parseMarkdownDocument(markdown).html;
+}
+
+export function extractToc(source: string | Element): TocEntry[] {
+  if (typeof source === 'string') return parseMarkdownDocument(source).toc;
+  return extractTocFromDom(source);
+}
+

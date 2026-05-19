@@ -296,11 +296,8 @@ export function activate(context: vscode.ExtensionContext): void {
         if (msg.type === 'ready') {
           webviewReady = true;
           sendTheme(theme);
+          pendingUpdate = false;
           sendUpdateNow();
-          if (pendingUpdate) {
-            pendingUpdate = false;
-            sendUpdateNow();
-          }
         }
       });
 

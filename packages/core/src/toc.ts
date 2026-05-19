@@ -1,7 +1,6 @@
-import { marked } from 'marked';
 import type { TocEntry } from './types.js';
 
-function stripFrontMatter(markdown: string): string {
+export function stripFrontMatter(markdown: string): string {
   return markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
 }
 
@@ -23,36 +22,29 @@ export function createHeadingSlugAllocator(): (plainHeadingText: string) => stri
   };
 }
 
-function collectHeadings(tokens: unknown, out: TocEntry[], nextSlug: (plain: string) => string): void {
-  if (!Array.isArray(tokens)) return;
+const HEADING_MARKDOWN_PREFIX = /^#{1,6}\s+/;
 
-  for (const token of tokens as Array<Record<string, unknown>>) {
-    if (!token || typeof token !== 'object') continue;
-    const heading = token as Record<string, unknown>;
+function stripHtmlTags(s: string): string {
+  return s.replace(/<[^>]*>/g, '');
+}
 
-    if (heading.type === 'heading') {
-      const plain = String(heading.text ?? heading.raw ?? '');
-      out.push({
-        id: nextSlug(plain),
-        level: Number(heading.depth ?? 1),
-        text: String(heading.text ?? ''),
-      });
-    }
+/** Plain text used for heading slug ids (must match between TOC and render). */
+export function headingSlugInput(text: string, raw?: string): string {
+  let plain = String(raw ?? text);
+  plain = plain.replace(HEADING_MARKDOWN_PREFIX, '');
+  plain = stripHtmlTags(plain);
+  return plain.trim();
+}
 
-    if (Array.isArray(heading.tokens)) collectHeadings(heading.tokens, out, nextSlug);
-    if (Array.isArray(heading.items)) collectHeadings(heading.items, out, nextSlug);
+/** Sidebar-safe heading label without HTML or `#` markers. */
+export function headingDisplayText(text: string, raw?: string): string {
+  if (raw !== undefined && raw !== '') {
+    return String(raw).replace(HEADING_MARKDOWN_PREFIX, '').trim();
   }
+  return stripHtmlTags(String(text)).trim();
 }
 
-function extractFromMarkdown(markdown: string): TocEntry[] {
-  const tokens = marked.lexer(stripFrontMatter(markdown));
-  const out: TocEntry[] = [];
-  collectHeadings(tokens, out, createHeadingSlugAllocator());
-  return out;
-}
-
-export function extractToc(source: string | Element): TocEntry[] {
-  if (typeof source === 'string') return extractFromMarkdown(source);
+export function extractTocFromDom(source: Element): TocEntry[] {
   if (!source) return [];
   return Array.from(source.querySelectorAll('h1,h2,h3,h4,h5,h6')).map((h) => ({
     id: h.id,
