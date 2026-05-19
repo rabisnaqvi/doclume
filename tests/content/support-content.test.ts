@@ -1,13 +1,16 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { renderMarkdown } from '@doclume/core';
 
 describe('support content', () => {
-  const samplesDir = resolve(process.cwd(), 'docs/samples');
-  const sampleFiles = readdirSync(samplesDir).filter((name) => name.startsWith('markdown-coverage.'));
+  const samples = [
+    ['sample.md', resolve(process.cwd(), 'packages/web/public/sample.md')],
+    ['basic.md', resolve(process.cwd(), 'tests/fixtures/basic.md')],
+    ['rich.md', resolve(process.cwd(), 'tests/fixtures/rich.md')],
+  ] as const;
 
-  it.each(sampleFiles)('renders %s as non-empty HTML', (filename) => {
-    const markdown = readFileSync(resolve(samplesDir, filename), 'utf8');
+  it.each(samples)('renders %s as non-empty HTML', (_, filePath) => {
+    const markdown = readFileSync(filePath, 'utf8');
     const html = renderMarkdown(markdown).trim();
 
     expect(html).not.toBe('');
