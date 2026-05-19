@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 
-const viewerMarkdown = readFileSync('tests/fixtures/viewer.md', 'utf8');
+const viewerMarkdown = readFileSync('tests/fixtures/basic.md', 'utf8');
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript((markdown) => {
@@ -17,10 +17,9 @@ test('renders the viewer content', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);
 
-  const viewer = page.locator('.vsc-viewer');
   const article = page.locator('article.markdown');
 
-  await expect(article.locator('h1')).toHaveText('Viewer coverage');
-  await expect(article.locator('table')).toBeVisible();
-  await expect(viewer).toHaveScreenshot('viewer-content.png');
+  await expect(article.locator('h1')).toHaveText('Basic document');
+  await expect(article.locator('ul')).toBeVisible();
+  await expect(page).toHaveScreenshot('viewer-content.png', { fullPage: true });
 });
