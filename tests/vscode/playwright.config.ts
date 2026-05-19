@@ -7,7 +7,6 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:4175',
     viewport: { width: 1440, height: 1200 },
     colorScheme: 'light',
-    reducedMotion: 'reduce',
   },
   webServer: {
     command: 'pnpm --filter doclume build:webview && pnpm --filter doclume preview:webview',

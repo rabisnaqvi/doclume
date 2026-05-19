@@ -14,6 +14,9 @@ importers:
       '@resvg/resvg-js':
         specifier: ^2.6.2
         version: 2.6.2
+      '@types/node':
+        specifier: ^22.19.19
+        version: 22.19.19
       '@vscode/test-electron':
         specifier: ^2.5.2
         version: 2.5.2

@@ -21,11 +21,13 @@
     "test:vscode:visual": "playwright test --config tests/vscode/playwright.config.ts",
     "test:vscode": "pnpm test:vscode:smoke && pnpm test:vscode:visual",
     "test:update-snapshots": "pnpm test:web -- --update-snapshots && pnpm test:vscode:visual -- --update-snapshots",
-    "typecheck": "tsc --build"
+    "typecheck": "tsc --build && tsc -p tests/tsconfig.json --noEmit",
+    "typecheck:tests": "tsc -p tests/tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
     "@resvg/resvg-js": "^2.6.2",
+    "@types/node": "^22.19.19",
     "@vscode/test-electron": "^2.5.2",
     "jsdom": "^29.1.1",
     "typescript": "^5.5.3",

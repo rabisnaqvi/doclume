@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": "..",
+    "lib": ["ES2022", "DOM"],
+    "types": ["node", "vitest/globals"],
+    "paths": {
+      "@doclume/core": ["packages/core/src/index.ts"]
+    }
+  },
+  "include": ["../vitest.config.ts", "../packages/core/src/**/*.ts", "./**/*.ts"],
+  "exclude": ["**/*.js"]
+}
