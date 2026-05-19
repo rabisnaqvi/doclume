@@ -1,4 +1,5 @@
 import type { ThemeId } from './types.js';
+import { sanitizeMermaidSvg } from './sanitize.js';
 
 let mermaidWarm = false;
 
@@ -29,7 +30,8 @@ export async function renderMermaidDiagrams(
     mermaid.initialize({
       startOnLoad: false,
       theme: getMermaidTheme(theme),
-      securityLevel: 'loose',
+      securityLevel: 'strict',
+      htmlLabels: false,
     });
 
     if (!mermaidWarm) {
@@ -50,10 +52,9 @@ export async function renderMermaidDiagrams(
       if (!code.trim()) continue;
       const renderId = `mermaid-${i}-${Date.now()}`;
       try {
-        const { svg, bindFunctions } = await mermaid.render(renderId, code);
+        const { svg } = await mermaid.render(renderId, code);
         if (aborted()) return;
-        node.innerHTML = svg;
-        bindFunctions?.(node);
+        node.innerHTML = sanitizeMermaidSvg(svg);
       } catch {
         /* leave raw code on parse error */
       } finally {

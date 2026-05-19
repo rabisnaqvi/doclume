@@ -34,6 +34,13 @@ import {
   headingDisplayText,
   extractTocFromDom,
 } from './toc.js';
+import { sanitizeMarkdownHtml, sanitizeMarkdownUrl } from './sanitize.js';
+
+const KATEX_RENDER_OPTIONS = {
+  throwOnError: false,
+  trust: false,
+  strict: 'ignore' as const,
+};
 
 /** Curated highlight.js grammars (core build); `bash` before `shell` (shell session embeds bash). */
 const HIGHLIGHT_LANGUAGES: Array<[string, any]> = [
@@ -150,7 +157,7 @@ const mathBlock = {
       return `<div class="math-block math-pending"><code>${escapeHtml(text)}</code></div>\n`;
     }
     try {
-      return `<div class="math-block">${katexRuntime.renderToString(text, { displayMode: true, throwOnError: false })}</div>\n`;
+      return `<div class="math-block">${katexRuntime.renderToString(text, { ...KATEX_RENDER_OPTIONS, displayMode: true })}</div>\n`;
     } catch {
       return `<div class="math-block math-error"><code>${escapeHtml(text)}</code></div>\n`;
     }
@@ -172,7 +179,7 @@ const mathInline = {
       return `<span class="math-inline math-pending"><code>${escapeHtml(text)}</code></span>`;
     }
     try {
-      return `<span class="math-inline">${katexRuntime.renderToString(text, { throwOnError: false })}</span>`;
+      return `<span class="math-inline">${katexRuntime.renderToString(text, KATEX_RENDER_OPTIONS)}</span>`;
     } catch {
       return `<span class="math-inline math-error"><code>${escapeHtml(text)}</code></span>`;
     }
@@ -251,9 +258,23 @@ export function configureMarked(): void {
 
   const renderer = new Renderer();
   const defaultTable = renderer.table.bind(renderer);
+  const defaultLink = renderer.link.bind(renderer);
+  const defaultImage = renderer.image.bind(renderer);
 
   renderer.code = function (code: string, lang: string | undefined): string {
     return renderCodeBlock(code, lang);
+  };
+
+  renderer.html = function (text: string): string {
+    return escapeHtml(text);
+  };
+
+  renderer.link = function (href: string, title: string | null | undefined, text: string): string {
+    return defaultLink(sanitizeMarkdownUrl(href), title, text);
+  };
+
+  renderer.image = function (href: string, title: string | null | undefined, text: string): string {
+    return defaultImage(sanitizeMarkdownUrl(href), title ?? null, text);
   };
 
   renderer.table = function (header: string, body: string): string {
@@ -284,8 +305,8 @@ function parseMarkdownDocument(markdown: string): MarkdownResult {
     return `<h${level} id="${slug}">${text}</h${level}>\n`;
   };
   try {
-    const html = marked.parse(stripFrontMatter(markdown), { renderer }) as string;
-    return { html, toc };
+    const rawHtml = marked.parse(stripFrontMatter(markdown), { renderer }) as string;
+    return { html: sanitizeMarkdownHtml(rawHtml), toc };
   } catch (e) {
     return {
       html: `<p style="color:var(--muted)">Could not render markdown: ${escapeHtml((e as Error).message)}</p>`,

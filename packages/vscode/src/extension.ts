@@ -3,12 +3,14 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { THEMES, type ThemeId, type WebviewMessage } from '@doclume/core';
 
-/** Serialise data for embedding in a <script> tag safely (no </script> injection). */
-function safeJson(doc: { markdown: string; name: string }, theme: string): string {
+/** Serialise data for embedding in a <script> tag (HTML + JS-in-script safe). */
+function safeJson(doc: { markdown: string }, theme: string): string {
   return JSON.stringify({ ...doc, theme })
     .replace(/</g, '\\u003c')
     .replace(/>/g, '\\u003e')
-    .replace(/&/g, '\\u0026');
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 }
 
 function getNonce(): string {
@@ -75,7 +77,7 @@ function buildWebviewHtml(
   nonce: string,
   theme: ThemeId,
   baseUri?: string,
-  initialDoc?: { markdown: string; name: string },
+  initialDoc?: { markdown: string },
 ): string {
   const distDir = vscode.Uri.joinPath(extensionUri, 'dist', 'webview');
 
@@ -144,6 +146,10 @@ function buildWebviewHtml(
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'none';
+    base-uri 'none';
+    object-src 'none';
+    frame-src 'none';
+    form-action 'none';
     style-src ${webview.cspSource} 'unsafe-inline';
     script-src 'nonce-${nonce}' ${webview.cspSource} 'unsafe-eval';
     font-src ${webview.cspSource};
@@ -259,14 +265,13 @@ export function activate(context: vscode.ExtensionContext): void {
       const nonce = getNonce();
       let theme = resolvePreviewTheme(config);
       const baseUri = panel.webview.asWebviewUri(vscode.Uri.file(path.dirname(document.fileName))).toString() + '/';
-      const initialDoc = { markdown: document.getText(), name: path.basename(document.fileName) };
+      const initialDoc = { markdown: document.getText() };
       panel.webview.html = buildWebviewHtml(panel.webview, context.extensionUri, nonce, theme, baseUri, initialDoc);
 
       const sendUpdateNow = (): void => {
         const msg: WebviewMessage = {
           type: 'update',
           markdown: document.getText(),
-          name: path.basename(document.fileName),
         };
         panel.webview.postMessage(msg);
       };

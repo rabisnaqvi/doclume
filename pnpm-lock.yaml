@@ -17,6 +17,9 @@ importers:
 
   packages/core:
     dependencies:
+      dompurify:
+        specifier: ^3.2.6
+        version: 3.4.3
       highlight.js:
         specifier: ^11.9.0
         version: 11.11.1

@@ -34,7 +34,7 @@ export interface Prefs {
 }
 
 export type WebviewMessage =
-  | { type: 'update'; markdown: string; name: string }
+  | { type: 'update'; markdown: string }
   | { type: 'theme'; id: ThemeId };
 
 export type HostMessage = { type: 'ready' };

@@ -12,6 +12,7 @@
     "build": "tsc --noEmit"
   },
   "dependencies": {
+    "dompurify": "^3.2.6",
     "highlight.js": "^11.9.0",
     "katex": "^0.16.47",
     "marked": "^12.0.2",

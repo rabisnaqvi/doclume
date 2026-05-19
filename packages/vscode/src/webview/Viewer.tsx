@@ -18,7 +18,7 @@ declare function acquireVsCodeApi(): { postMessage(msg: unknown): void };
 
 declare global {
   interface Window {
-    __DOCLUME_INIT__?: { markdown: string; name: string; theme: ThemeId };
+    __DOCLUME_INIT__?: { markdown: string; theme: ThemeId };
   }
 }
 
@@ -30,7 +30,6 @@ export function Viewer() {
   const init = readInit();
 
   const [markdown, setMarkdown] = useState(init?.markdown ?? '');
-  const [docName, setDocName] = useState(init?.name ?? '');
   const [theme, setTheme] = useState<ThemeId>(init?.theme ?? 'manual');
   const [mathVersion, bumpMathVersion] = useReducer((v: number) => v + 1, 0);
   const contentRef = useRef<HTMLElement>(null);
@@ -46,7 +45,6 @@ export function Viewer() {
       const msg = event.data;
       if (msg.type === 'update') {
         setMarkdown(msg.markdown);
-        setDocName(msg.name);
       } else if (msg.type === 'theme') {
         document.documentElement.dataset.theme = msg.id;
         setTheme(msg.id);
