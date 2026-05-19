@@ -134,6 +134,18 @@ Auto mode tracks your VS Code color theme — light workspace gets Manual, dark 
 
 ---
 
+## Testing
+
+Run the local suite with:
+
+- `pnpm test:core`
+- `pnpm test:web`
+- `pnpm test:vscode:smoke`
+- `pnpm test:vscode:visual`
+- `pnpm test:vscode`
+- `pnpm test`
+- `pnpm test:update-snapshots`
+
 ## License
 
 MIT · [rabisnaqvi](https://github.com/rabisnaqvi)

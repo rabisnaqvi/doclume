@@ -111,6 +111,14 @@ Settings apply workspace-wide when a workspace is open, globally otherwise.
 
 ---
 
+## Testing
+
+Run the VS Code-specific checks with:
+
+- `pnpm test:vscode:smoke`
+- `pnpm test:vscode:visual`
+- `pnpm test:vscode`
+
 ## Supported file types
 
 `.md` · `.prompt` · `.instructions` · `.chatagent` · `.skill`
