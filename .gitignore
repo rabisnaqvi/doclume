@@ -8,3 +8,5 @@ thoughts
 tsconfig.tsbuildinfo
 docs
 .rpiv
+.ralph
+.DS_Store

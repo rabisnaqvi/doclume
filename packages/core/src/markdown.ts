@@ -101,6 +101,16 @@ let katexPromise: Promise<KatexRuntime> | null = null;
 
 export const MATH_READY_EVENT = 'doclume:math-ready';
 
+export function subscribeWindowEvent(
+  type: string,
+  listener: EventListenerOrEventListenerObject,
+  options?: boolean | AddEventListenerOptions,
+): () => void {
+  if (typeof window === 'undefined') return () => {};
+  window.addEventListener(type, listener, options);
+  return () => window.removeEventListener(type, listener, options);
+}
+
 function notifyMathReady(): void {
   if (typeof window === 'undefined') return;
   window.setTimeout(() => {

@@ -4,6 +4,8 @@ import {
   configureMarked,
   renderMarkdownWithMeta,
   renderMermaidDiagrams,
+  runAbortableTask,
+  subscribeWindowEvent,
   estimateReadingTime,
   MATH_READY_EVENT,
   type Theme,
@@ -525,11 +527,7 @@ export function App() {
     savePrefs({ ...prefs, theme, sidebarCollapsed });
   }, [theme, sidebarCollapsed]);
 
-  useEffect(() => {
-    const onMathReady = () => bumpMathVersion();
-    window.addEventListener(MATH_READY_EVENT, onMathReady);
-    return () => window.removeEventListener(MATH_READY_EVENT, onMathReady);
-  }, []);
+  useEffect(() => subscribeWindowEvent(MATH_READY_EVENT, () => bumpMathVersion()), []);
 
   const { renderedHtml, toc } = useMemo(() => {
     if (!doc.markdown) return { renderedHtml: '', toc: [] };
@@ -537,11 +535,9 @@ export function App() {
     return { renderedHtml: html, toc: nextToc };
   }, [doc.markdown, mathVersion]);
 
-  useEffect(() => {
-    const ac = new AbortController();
-    void renderMermaidDiagrams(contentRef.current, theme, { signal: ac.signal });
-    return () => ac.abort();
-  }, [renderedHtml, theme]);
+  useEffect(() => runAbortableTask((signal) => {
+    void renderMermaidDiagrams(contentRef.current, theme, { signal });
+  }), [renderedHtml, theme]);
 
   useEffect(() => {
     setActiveId(toc[0]?.id ?? '');

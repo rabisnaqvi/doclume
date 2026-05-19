@@ -3,6 +3,8 @@ import {
   configureMarked,
   renderMarkdown,
   renderMermaidDiagrams,
+  runAbortableTask,
+  subscribeWindowEvent,
   MATH_READY_EVENT,
   type ThemeId,
   type WebviewMessage,
@@ -59,19 +61,13 @@ export function Viewer() {
     return () => window.removeEventListener('message', handler);
   }, []);
 
-  useEffect(() => {
-    const onMathReady = () => bumpMathVersion();
-    window.addEventListener(MATH_READY_EVENT, onMathReady);
-    return () => window.removeEventListener(MATH_READY_EVENT, onMathReady);
-  }, []);
+  useEffect(() => subscribeWindowEvent(MATH_READY_EVENT, () => bumpMathVersion()), []);
 
   const renderedHtml = useMemo(() => (markdown ? renderMarkdown(markdown) : ''), [markdown, mathVersion]);
 
-  useEffect(() => {
-    const ac = new AbortController();
-    void renderMermaidDiagrams(contentRef.current, theme, { signal: ac.signal });
-    return () => ac.abort();
-  }, [renderedHtml, theme]);
+  useEffect(() => runAbortableTask((signal) => {
+    void renderMermaidDiagrams(contentRef.current, theme, { signal });
+  }), [renderedHtml, theme]);
 
   if (!markdown) {
     return (

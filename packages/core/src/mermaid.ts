@@ -20,6 +20,12 @@ export interface RenderMermaidOptions {
   signal?: AbortSignal;
 }
 
+export function runAbortableTask(task: (signal: AbortSignal) => void | Promise<void>): () => void {
+  const ac = new AbortController();
+  void task(ac.signal);
+  return () => ac.abort();
+}
+
 /** Render `.mermaid` placeholders under `root` (dynamic import; safe in browser/webview only). */
 export async function renderMermaidDiagrams(
   root: ParentNode | null | undefined,
