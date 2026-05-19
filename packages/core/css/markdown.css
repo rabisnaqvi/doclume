@@ -101,7 +101,7 @@
   margin: 0 0 var(--paragraph-spacing);
 }
 
-.markdown table {
+.markdown-table-wrap table {
   width: max-content;
   min-width: 100%;
   border-collapse: collapse;
@@ -109,6 +109,38 @@
   font-family: var(--ui-font);
   font-size: 0.9em;
   line-height: 1.5;
+}
+
+/* Raw HTML tables (e.g. README theme grid) — stay within reader width */
+.markdown > table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin: 0 0 var(--paragraph-spacing);
+  font-family: var(--ui-font);
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.markdown > table td,
+.markdown > table th {
+  padding: 10px 12px;
+  vertical-align: top;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.markdown > table img {
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  margin: 0 auto 0.5em;
+  display: block;
+}
+
+.markdown > table a {
+  display: block;
 }
 
 .markdown thead { border-bottom: 1.5px solid var(--text); }
@@ -132,6 +164,8 @@
 .markdown th:last-child, .markdown td:last-child { padding-right: 0; }
 
 .markdown img {
+  max-width: 100%;
+  height: auto;
   border-radius: 4px;
   margin: 1.4em 0;
   border: 1px solid var(--border-soft);
@@ -369,7 +403,13 @@ html[data-theme='lamplight'] .markdown img {
   border-radius: 2px;
   margin: 2em auto;
   display: block;
-  max-width: 90%;
+  max-width: min(90%, 100%);
+}
+
+html[data-theme='library'] .markdown > table img,
+html[data-theme='lamplight'] .markdown > table img {
+  max-width: 100%;
+  margin: 0 auto 0.5em;
 }
 
 /* =========================================================================
@@ -518,6 +558,8 @@ html[data-theme='console'] .markdown hr::after {
 
 html[data-theme='manual'] .markdown img,
 html[data-theme='console'] .markdown img {
+  max-width: 100%;
+  height: auto;
   border: 1px solid var(--border-soft);
   border-radius: 6px;
 }

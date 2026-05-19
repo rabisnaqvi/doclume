@@ -69,15 +69,21 @@ Five reading themes, two font families, both sides of dark/light:
 
 Open any `.md`, `.prompt`, `.instructions`, `.chatagent`, or `.skill` file and press:
 
-- **Mac:** `Cmd+K Cmd+Shift+L`
-- **Windows / Linux:** `Ctrl+K Ctrl+Shift+L`
+- **Mac:** `Cmd+K Cmd+Shift+L` (VS Code) · `Cmd+Shift+Alt+L` (Cursor — see below)
+- **Windows / Linux:** `Ctrl+K Ctrl+Shift+L` (VS Code) · `Ctrl+Shift+Alt+L` (Cursor)
 
 Also available via:
-- Book icon `📖` in the editor toolbar
-- Right-click file in Explorer → **Open in Doclume**
+- Book icon in the editor toolbar (VS Code; [Cursor](#cursor-ide) may hide it by default)
+- Right-click in the editor or Explorer → **Open in Doclume**
 - Command Palette → **Doclume: Open in Doclume**
 
-Preview opens in a split panel beside the editor and tracks edits (updates are batched briefly so typing stays smooth).
+### Cursor IDE
+
+**Toolbar icon missing?** From Cursor 2.1, editor title actions are hidden by default. Open the `…` menu on the editor tab → **Configure Icon Visibility** → enable **Open in Doclume**. The command still works via palette, context menu, or the shortcut below.
+
+**`Cmd+K` does nothing?** Cursor binds `Cmd+K` to inline edit, so the VS Code-style chord `Cmd+K` then `Cmd+Shift+L` never reaches Doclume. Use **`Cmd+Shift+Alt+L`** instead (or rebind **Doclume: Open in Doclume** in Keyboard Shortcuts).
+
+Preview opens as a tab in the active editor group and tracks edits (updates are batched briefly so typing stays smooth).
 
 ---
 
@@ -85,7 +91,7 @@ Preview opens in a split panel beside the editor and tracks edits (updates are b
 
 | Command | What it does |
 |---------|--------------|
-| `Doclume: Open in Doclume` | Open markdown preview beside active editor |
+| `Doclume: Open in Doclume` | Open markdown preview in a new editor tab |
 | `Doclume: Select Doclume Theme…` | Pick theme from quick-pick list |
 | `Doclume: Cycle Doclume Theme` | Rotate through all themes in order |
 

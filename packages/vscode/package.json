@@ -72,6 +72,12 @@
         "key": "ctrl+k ctrl+shift+l",
         "mac": "cmd+k cmd+shift+l",
         "when": "editorTextFocus && editorLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/ && !notebookEditorFocused"
+      },
+      {
+        "command": "doclume.openPreview",
+        "key": "ctrl+shift+alt+l",
+        "mac": "cmd+shift+alt+l",
+        "when": "editorTextFocus && editorLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/ && !notebookEditorFocused"
       }
     ],
     "menus": {
@@ -83,6 +89,13 @@
         }
       ],
       "modalEditor/editorTitle": [
+        {
+          "command": "doclume.openPreview",
+          "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/ && !notebookEditorFocused",
+          "group": "navigation@0"
+        }
+      ],
+      "editor/context": [
         {
           "command": "doclume.openPreview",
           "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/ && !notebookEditorFocused",

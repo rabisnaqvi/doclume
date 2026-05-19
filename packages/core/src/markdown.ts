@@ -265,10 +265,6 @@ export function configureMarked(): void {
     return renderCodeBlock(code, lang);
   };
 
-  renderer.html = function (text: string): string {
-    return escapeHtml(text);
-  };
-
   renderer.link = function (href: string, title: string | null | undefined, text: string): string {
     return defaultLink(sanitizeMarkdownUrl(href), title, text);
   };

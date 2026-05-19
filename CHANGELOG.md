@@ -9,6 +9,10 @@ Monorepo releases use one version across the repo root, `@doclume/core`, `@doclu
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
 ## [0.2.0] - 2026-05-18
 
 ### Added
@@ -19,11 +23,15 @@ Monorepo releases use one version across the repo root, `@doclume/core`, `@doclu
 - **Core:** Wrapped markdown tables for horizontal scroll; stable heading `id`s for deep links.
 - **Web:** Reader chrome with outline/sidebar, responsive top bar and in-page search.
 - **VS Code:** Bundled variable fonts (Inter, Source Serif 4, JetBrains Mono) in the webview — no Google Fonts fetch; CSP tightened for fonts/styles accordingly.
+- **VS Code:** `Cmd+Shift+Alt+L` / `Ctrl+Shift+Alt+L` shortcut for **Open in Doclume** (works in Cursor where `Cmd+K` chords are taken by the editor).
+- **VS Code:** Editor context menu entry for **Open in Doclume**.
 
 ### Changed
 
 - **Core:** Markdown pipeline centralized behind `renderMarkdown` / `configureMarked` (consumers use shared extensions and highlighting).
 - **VS Code:** Faster first paint — initial document and theme embedded in HTML; webview asset filenames cached across opens; document `postMessage` updates debounced (~120 ms) while typing.
+- **VS Code:** README documents Cursor toolbar icon visibility and keybinding differences.
+- **VS Code:** Preview opens in the active editor group (new tab) instead of a split beside the source file.
 - **Web:** Layout and styling refactor (shell components, CSS) aligned with the shared reader experience.
 
 ## [0.1.1] - 2026-05-16

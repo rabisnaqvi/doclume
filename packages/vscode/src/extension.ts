@@ -250,7 +250,7 @@ export function activate(context: vscode.ExtensionContext): void {
       const panel = vscode.window.createWebviewPanel(
         'doclumePreview',
         `Doclume: ${path.basename(document.fileName)}`,
-        vscode.ViewColumn.Beside,
+        vscode.ViewColumn.Active,
         {
           enableScripts: true,
           localResourceRoots: [

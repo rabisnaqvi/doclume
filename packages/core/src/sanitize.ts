@@ -10,7 +10,23 @@ const MERMAID_SVG_CONFIG: Config = {
 
 const MARKDOWN_HTML_CONFIG: Config = {
   USE_PROFILES: { html: true },
-  ADD_ATTR: ['id', 'data-src', 'aria-hidden', 'aria-label', 'role', 'colspan', 'rowspan', 'start'],
+  ADD_ATTR: [
+    'id',
+    'data-src',
+    'aria-hidden',
+    'aria-label',
+    'role',
+    'colspan',
+    'rowspan',
+    'start',
+    'align',
+    'width',
+    'height',
+    'target',
+    'rel',
+    'loading',
+    'decoding',
+  ],
   ALLOW_DATA_ATTR: false,
   ALLOW_UNKNOWN_PROTOCOLS: false,
 };
