@@ -4,6 +4,8 @@ test('loads the sample document', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: /try the sample/i }).click();
 
-  await expect(page.locator('main.reader .reader__filename')).toHaveText('sample.md');
-  await expect(page.locator('main.reader article.markdown')).toBeVisible();
+  const reader = page.locator('main.reader');
+  await expect(reader.locator('.reader__filename')).toHaveText('sample.md');
+  await expect(reader.locator('article.markdown')).toBeVisible();
+  await expect(reader).toHaveScreenshot('reader-sample.png');
 });
