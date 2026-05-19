@@ -18,4 +18,19 @@ describe('markdown rendering', () => {
       { id: 'nested-heading', level: 3, text: 'Nested heading' },
     ]);
   });
+
+  it('renders inline markdown inside definition lists', () => {
+    const html = renderMarkdown(`Term with *emphasis* and [link](https://example.com)\n: Definition with \`code\``);
+
+    expect(html).toContain('<dt>Term with <em>emphasis</em> and <a href="https://example.com">link</a></dt>');
+    expect(html).toContain('<dd>Definition with <code>code</code></dd>');
+  });
+
+  it('omits unsafe language classes for unknown code fences', () => {
+    const html = renderMarkdown('```foo" onmouseover="x\nalert(1)\n```');
+
+    expect(html).toContain('<pre><code class="hljs">');
+    expect(html).not.toContain('language-foo');
+    expect(html).not.toContain('onmouseover');
+  });
 });

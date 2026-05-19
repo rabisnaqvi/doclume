@@ -10,4 +10,11 @@ describe('markdown sanitization', () => {
     expect(html).toContain('href="#"');
     expect(html).toContain('<img>');
   });
+
+  it('sanitizes links inside definition lists', () => {
+    const html = renderMarkdown(`Term\n: [bad](javascript:alert(1))`);
+
+    expect(html).not.toMatch(/javascript:/i);
+    expect(html).toContain('href="#"');
+  });
 });

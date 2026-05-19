@@ -198,6 +198,10 @@ const mathInline = {
 
 interface DeflistItem { term: string; defs: string[] }
 
+function renderInlineMarkdown(text: string): string {
+  return marked.parseInline(text) as string;
+}
+
 const deflist = {
   name: 'deflist',
   level: 'block' as const,
@@ -224,8 +228,8 @@ const deflist = {
     const items = token.items as DeflistItem[];
     let html = '<dl>\n';
     for (const { term, defs } of items) {
-      html += `<dt>${escapeHtml(term)}</dt>\n`;
-      for (const def of defs) html += `<dd>${escapeHtml(def)}</dd>\n`;
+      html += `<dt>${renderInlineMarkdown(term)}</dt>\n`;
+      for (const def of defs) html += `<dd>${renderInlineMarkdown(def)}</dd>\n`;
     }
     return html + '</dl>\n';
   },
@@ -243,18 +247,20 @@ function renderCodeBlock(code: string, lang: string | undefined): string {
   }
 
   const normalized = normalizeLanguage(lang);
-  if (normalized && hljs.getLanguage(normalized)) {
+  const className = normalized && hljs.getLanguage(normalized) ? ` language-${normalized}` : '';
+
+  if (className) {
     try {
-      return `<pre><code class="hljs language-${normalized}">${hljs.highlight(code, { language: normalized, ignoreIllegals: true }).value}</code></pre>\n`;
+      return `<pre><code class="hljs${className}">${hljs.highlight(code, { language: normalized, ignoreIllegals: true }).value}</code></pre>\n`;
     } catch {
       // fall through to auto-detection
     }
   }
 
   try {
-    return `<pre><code class="hljs language-${normalized ?? ''}">${hljs.highlightAuto(code).value}</code></pre>\n`;
+    return `<pre><code class="hljs">${hljs.highlightAuto(code).value}</code></pre>\n`;
   } catch {
-    return `<pre><code class="hljs language-${normalized ?? ''}">${escapeHtml(code)}</code></pre>\n`;
+    return `<pre><code class="hljs">${escapeHtml(code)}</code></pre>\n`;
   }
 }
 
