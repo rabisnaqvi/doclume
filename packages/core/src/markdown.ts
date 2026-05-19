@@ -249,7 +249,7 @@ function renderCodeBlock(code: string, lang: string | undefined): string {
   const normalized = normalizeLanguage(lang);
   const className = normalized && hljs.getLanguage(normalized) ? ` language-${normalized}` : '';
 
-  if (className) {
+  if (className && normalized) {
     try {
       return `<pre><code class="hljs${className}">${hljs.highlight(code, { language: normalized, ignoreIllegals: true }).value}</code></pre>\n`;
     } catch {
