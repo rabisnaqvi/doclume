@@ -139,7 +139,7 @@ function buildWebviewHtml(
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'none';
-    base-uri 'none';
+    base-uri ${webview.cspSource};
     object-src 'none';
     frame-src 'none';
     form-action 'none';

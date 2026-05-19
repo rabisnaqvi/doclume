@@ -68,9 +68,15 @@ export function sanitizeMarkdownHtml(html: string): string {
   return sanitize(html, MARKDOWN_HTML_CONFIG);
 }
 
-const UNSAFE_URL_SCHEME = /^\s*(javascript|vbscript|data):/i;
+const UNSAFE_LINK_URL_SCHEME = /^\s*(javascript|vbscript|data):/i;
+const UNSAFE_IMAGE_URL_SCHEME = /^\s*(javascript|vbscript):/i;
 
-/** Block dangerous URL schemes in markdown links/images. */
-export function sanitizeMarkdownUrl(url: string): string {
-  return UNSAFE_URL_SCHEME.test(url) ? '#' : url;
+/** Block dangerous URL schemes in markdown links. */
+export function sanitizeMarkdownLinkUrl(url: string): string {
+  return UNSAFE_LINK_URL_SCHEME.test(url) ? '#' : url;
+}
+
+/** Block dangerous URL schemes in markdown images while allowing data URIs. */
+export function sanitizeMarkdownImageUrl(url: string): string {
+  return UNSAFE_IMAGE_URL_SCHEME.test(url) ? '#' : url;
 }

@@ -25,25 +25,17 @@ export function createHeadingSlugAllocator(): (plainHeadingText: string) => stri
   };
 }
 
-const HEADING_MARKDOWN_PREFIX = /^#{1,6}\s+/;
-
 function stripHtmlTags(s: string): string {
   return s.replace(/<[^>]*>/g, '');
 }
 
 /** Plain text used for heading slug ids (must match between TOC and render). */
-export function headingSlugInput(text: string, raw?: string): string {
-  let plain = String(raw ?? text);
-  plain = plain.replace(HEADING_MARKDOWN_PREFIX, '');
-  plain = stripHtmlTags(plain);
-  return plain.trim();
+export function headingSlugInput(text: string): string {
+  return stripHtmlTags(String(text)).trim();
 }
 
-/** Sidebar-safe heading label without HTML or `#` markers. */
-export function headingDisplayText(text: string, raw?: string): string {
-  if (raw !== undefined && raw !== '') {
-    return String(raw).replace(HEADING_MARKDOWN_PREFIX, '').trim();
-  }
+/** Sidebar-safe heading label without HTML. */
+export function headingDisplayText(text: string): string {
   return stripHtmlTags(String(text)).trim();
 }
 

@@ -34,7 +34,7 @@ import {
   headingDisplayText,
   extractTocFromDom,
 } from './toc.js';
-import { sanitizeMarkdownHtml, sanitizeMarkdownUrl } from './sanitize.js';
+import { sanitizeMarkdownHtml, sanitizeMarkdownLinkUrl, sanitizeMarkdownImageUrl } from './sanitize.js';
 
 const KATEX_RENDER_OPTIONS = {
   throwOnError: false,
@@ -266,11 +266,11 @@ export function configureMarked(): void {
   };
 
   renderer.link = function (href: string, title: string | null | undefined, text: string): string {
-    return defaultLink(sanitizeMarkdownUrl(href), title, text);
+    return defaultLink(sanitizeMarkdownLinkUrl(href), title, text);
   };
 
   renderer.image = function (href: string, title: string | null | undefined, text: string): string {
-    return defaultImage(sanitizeMarkdownUrl(href), title ?? null, text);
+    return defaultImage(sanitizeMarkdownImageUrl(href), title ?? null, text);
   };
 
   renderer.table = function (header: string, body: string): string {
@@ -294,10 +294,10 @@ function parseMarkdownDocument(markdown: string): MarkdownResult {
     };
   }
   const renderer = Object.assign(Object.create(Object.getPrototypeOf(baseRenderer)), baseRenderer);
-  renderer.heading = function (text: string, level: number, raw?: string): string {
-    const plain = headingSlugInput(text, raw);
+  renderer.heading = function (text: string, level: number): string {
+    const plain = headingSlugInput(text);
     const slug = nextSlug(plain);
-    toc.push({ id: slug, level, text: headingDisplayText(text, raw) });
+    toc.push({ id: slug, level, text: headingDisplayText(text) });
     return `<h${level} id="${slug}">${text}</h${level}>\n`;
   };
   try {
