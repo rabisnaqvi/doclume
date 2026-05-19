@@ -1,16 +1,14 @@
-# Rich Fixture
+# Reading confidence
 
-## Links
+## First section
 
-Read more at [Example Domain](https://example.com).
+A paragraph with a [link](https://example.com), `inline code`, and a small table.
 
-## Table
-
-| Item | Value |
+| Name | Value |
 | --- | --- |
-| Alpha | One |
-| Beta | Two |
+| Alpha | 1 |
+| Beta | 2 |
 
-## Image
+### Nested heading
 
-![A simple placeholder image](https://example.com/image.png)
+![Alt text](https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200&auto=format&fit=crop&q=70)

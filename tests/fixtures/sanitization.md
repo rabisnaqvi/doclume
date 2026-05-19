@@ -1,9 +1,5 @@
-# Sanitization Fixture
+# Sanitization fixture
 
-This document exercises unsafe markdown URLs.
+[bad link](javascript:alert('xss'))
 
-[Unsafe link](javascript:alert('xss'))
-
-![Unsafe image](javascript:alert('xss'))
-
-[Data URL](data:text/html,<script>alert('xss')</script>)
+<img src="javascript:alert('xss')" onerror="alert('xss')">
