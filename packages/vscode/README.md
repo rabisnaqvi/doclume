@@ -118,6 +118,7 @@ Run the VS Code-specific checks with:
 - `pnpm test:vscode:smoke`
 - `pnpm test:vscode:visual`
 - `pnpm test:vscode`
+- `pnpm --filter doclume build:webview`
 
 ## Supported file types
 
