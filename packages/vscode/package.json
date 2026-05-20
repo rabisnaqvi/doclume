@@ -2,7 +2,7 @@
   "name": "doclume",
   "displayName": "Doclume",
   "description": "Markdown preview with beautiful typography and themes. Serif and sans reading modes, dark and light, for VS Code.",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "publisher": "rabisnaqvi",
   "license": "MIT",
   "repository": {
