@@ -13,7 +13,7 @@
     "deploy:worker:preview": "pnpm dlx wrangler versions upload --config wrangler.toml",
     "build:ext": "pnpm --filter doclume build",
     "package:ext": "pnpm --filter doclume package",
-    "publish:ext": "pnpm --filter doclume publish",
+    "publish:ext": "pnpm --filter doclume run publish",
     "test": "pnpm test:core && pnpm test:web && pnpm test:vscode",
     "test:core": "vitest run --config vitest.config.ts",
     "test:web": "playwright test --config tests/web/playwright.config.ts",
