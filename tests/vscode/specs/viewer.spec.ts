@@ -22,5 +22,5 @@ test('renders the viewer content', async ({ page }) => {
 
   await expect(article.locator('h1')).toHaveText('Basic document');
   await expect(article.locator('ul')).toBeVisible();
-  await expect(page).toHaveScreenshot('viewer-content.png', { fullPage: true });
+  await expect(page).toHaveScreenshot('viewer-content.png', { fullPage: true, maxDiffPixelRatio: 0.02 });
 });

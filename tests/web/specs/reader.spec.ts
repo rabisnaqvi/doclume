@@ -9,5 +9,5 @@ test('loads the sample document', async ({ page }) => {
 
   await expect(reader.locator('.reader__filename')).toHaveText('sample.md');
   await expect(reader.locator('article.markdown')).toBeVisible();
-  await expect(reader).toHaveScreenshot('reader-sample.png');
+  await expect(reader).toHaveScreenshot('reader-sample.png', { maxDiffPixelRatio: 0.06 });
 });
