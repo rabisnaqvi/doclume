@@ -146,8 +146,6 @@ Run the local suite with:
 - `pnpm test`
 - `pnpm test:update-snapshots`
 
-## Testing
-
 For local test commands and snapshot maintenance notes, see [`tests/README.md`](./tests/README.md).
 
 ## License
