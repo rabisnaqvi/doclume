@@ -1,5 +1,142 @@
 import { marked, Renderer } from 'marked';
-import hljs from 'highlight.js';
+import markedFootnote from 'marked-footnote';
+import hljs from 'highlight.js/lib/core';
+import bash from 'highlight.js/lib/languages/bash';
+import c from 'highlight.js/lib/languages/c';
+import cpp from 'highlight.js/lib/languages/cpp';
+import csharp from 'highlight.js/lib/languages/csharp';
+import css from 'highlight.js/lib/languages/css';
+import diff from 'highlight.js/lib/languages/diff';
+import dockerfile from 'highlight.js/lib/languages/dockerfile';
+import go from 'highlight.js/lib/languages/go';
+import java from 'highlight.js/lib/languages/java';
+import javascript from 'highlight.js/lib/languages/javascript';
+import json from 'highlight.js/lib/languages/json';
+import kotlin from 'highlight.js/lib/languages/kotlin';
+import makefile from 'highlight.js/lib/languages/makefile';
+import markdown from 'highlight.js/lib/languages/markdown';
+import php from 'highlight.js/lib/languages/php';
+import python from 'highlight.js/lib/languages/python';
+import ruby from 'highlight.js/lib/languages/ruby';
+import rust from 'highlight.js/lib/languages/rust';
+import scss from 'highlight.js/lib/languages/scss';
+import shell from 'highlight.js/lib/languages/shell';
+import sql from 'highlight.js/lib/languages/sql';
+import swift from 'highlight.js/lib/languages/swift';
+import typescript from 'highlight.js/lib/languages/typescript';
+import xml from 'highlight.js/lib/languages/xml';
+import yaml from 'highlight.js/lib/languages/yaml';
+import type { TocEntry } from './types.js';
+import {
+  createHeadingSlugAllocator,
+  stripFrontMatter,
+  headingSlugInput,
+  headingDisplayText,
+  extractTocFromDom,
+} from './toc.js';
+import { sanitizeMarkdownHtml, sanitizeMarkdownLinkUrl, sanitizeMarkdownImageUrl } from './sanitize.js';
+
+const KATEX_RENDER_OPTIONS = {
+  throwOnError: false,
+  trust: false,
+  strict: 'ignore' as const,
+};
+
+/** Curated highlight.js grammars (core build); `bash` before `shell` (shell session embeds bash). */
+const HIGHLIGHT_LANGUAGES: Array<[string, any]> = [
+  ['bash', bash],
+  ['c', c],
+  ['cpp', cpp],
+  ['csharp', csharp],
+  ['css', css],
+  ['diff', diff],
+  ['dockerfile', dockerfile],
+  ['go', go],
+  ['java', java],
+  ['javascript', javascript],
+  ['json', json],
+  ['kotlin', kotlin],
+  ['makefile', makefile],
+  ['markdown', markdown],
+  ['php', php],
+  ['python', python],
+  ['ruby', ruby],
+  ['rust', rust],
+  ['scss', scss],
+  ['shell', shell],
+  ['sql', sql],
+  ['swift', swift],
+  ['typescript', typescript],
+  ['xml', xml],
+  ['yaml', yaml],
+];
+
+for (const [name, language] of HIGHLIGHT_LANGUAGES) {
+  hljs.registerLanguage(name, language);
+}
+
+const LANGUAGE_ALIASES: Record<string, string> = {
+  js: 'javascript',
+  jsx: 'javascript',
+  ts: 'typescript',
+  tsx: 'typescript',
+  sh: 'bash',
+  shell: 'bash',
+  zsh: 'bash',
+  yml: 'yaml',
+  html: 'xml',
+  xml: 'xml',
+  md: 'markdown',
+  py: 'python',
+  docker: 'dockerfile',
+  mk: 'makefile',
+};
+
+type KatexRuntime = {
+  renderToString: (expression: string, options?: { displayMode?: boolean; throwOnError?: boolean }) => string;
+};
+
+let katexRuntime: KatexRuntime | null = null;
+let katexPromise: Promise<KatexRuntime> | null = null;
+
+export const MATH_READY_EVENT = 'doclume:math-ready';
+
+export function subscribeWindowEvent(
+  type: string,
+  listener: EventListenerOrEventListenerObject,
+  options?: boolean | AddEventListenerOptions,
+): () => void {
+  if (typeof window === 'undefined') return () => {};
+  window.addEventListener(type, listener, options);
+  return () => window.removeEventListener(type, listener, options);
+}
+
+function notifyMathReady(): void {
+  if (typeof window === 'undefined') return;
+  window.setTimeout(() => {
+    try {
+      window.dispatchEvent(new Event(MATH_READY_EVENT));
+    } catch {
+      // ignore
+    }
+  }, 0);
+}
+
+async function ensureKatex(): Promise<KatexRuntime> {
+  if (katexRuntime) return katexRuntime;
+  if (!katexPromise) {
+    katexPromise = import('katex').then((mod) => {
+      const runtime = ((mod as { default?: KatexRuntime }).default ?? mod) as KatexRuntime;
+      katexRuntime = runtime;
+      notifyMathReady();
+      return runtime;
+    }).catch((error) => {
+      katexPromise = null;
+      throw error;
+    });
+  }
+  return katexPromise;
+}
 
 export function escapeHtml(s: string): string {
   const map: Record<string, string> = {
@@ -8,37 +145,198 @@ export function escapeHtml(s: string): string {
   return String(s).replace(/[&<>"']/g, (c) => map[c] ?? c);
 }
 
-const slugify = (text: string): string =>
-  String(text).toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
+export interface MarkdownResult {
+  html: string;
+  toc: TocEntry[];
+}
+
+/* ── Extensions ── */
+
+const mathBlock = {
+  name: 'mathBlock',
+  level: 'block' as const,
+  start(src: string) { return src.search(/^\$\$/m); },
+  tokenizer(src: string) {
+    const match = /^\$\$([\s\S]+?)\$\$/.exec(src);
+    if (match) return { type: 'mathBlock', raw: match[0], text: match[1].trim() };
+  },
+  renderer(token: Record<string, unknown>) {
+    const text = token.text as string;
+    if (!katexRuntime) {
+      void ensureKatex().catch(() => {});
+      return `<div class="math-block math-pending"><code>${escapeHtml(text)}</code></div>\n`;
+    }
+    try {
+      return `<div class="math-block">${katexRuntime.renderToString(text, { ...KATEX_RENDER_OPTIONS, displayMode: true })}</div>\n`;
+    } catch {
+      return `<div class="math-block math-error"><code>${escapeHtml(text)}</code></div>\n`;
+    }
+  },
+};
+
+const mathInline = {
+  name: 'mathInline',
+  level: 'inline' as const,
+  start(src: string) { return src.indexOf('$'); },
+  tokenizer(src: string) {
+    const match = /^\$([^$\n]+?)\$/.exec(src);
+    if (match) return { type: 'mathInline', raw: match[0], text: match[1] };
+  },
+  renderer(token: Record<string, unknown>) {
+    const text = token.text as string;
+    if (!katexRuntime) {
+      void ensureKatex().catch(() => {});
+      return `<span class="math-inline math-pending"><code>${escapeHtml(text)}</code></span>`;
+    }
+    try {
+      return `<span class="math-inline">${katexRuntime.renderToString(text, KATEX_RENDER_OPTIONS)}</span>`;
+    } catch {
+      return `<span class="math-inline math-error"><code>${escapeHtml(text)}</code></span>`;
+    }
+  },
+};
+
+interface DeflistItem { term: string; defs: string[] }
+
+function renderInlineMarkdown(text: string): string {
+  return marked.parseInline(text) as string;
+}
+
+const deflist = {
+  name: 'deflist',
+  level: 'block' as const,
+  start(src: string) { return src.search(/^[^\n]+\n:\s/m); },
+  tokenizer(src: string) {
+    const match = /^((?:[^\n]+\n(?::\s[^\n]*\n?)+)+)/.exec(src);
+    if (!match) return;
+    const raw = match[0];
+    const items: DeflistItem[] = [];
+    const lines = raw.split('\n');
+    let i = 0;
+    while (i < lines.length) {
+      const term = lines[i++];
+      if (!term) continue;
+      const defs: string[] = [];
+      while (i < lines.length && lines[i]?.startsWith(': ')) {
+        defs.push(lines[i++].slice(2));
+      }
+      if (defs.length) items.push({ term, defs });
+    }
+    if (items.length) return { type: 'deflist', raw, items };
+  },
+  renderer(token: Record<string, unknown>) {
+    const items = token.items as DeflistItem[];
+    let html = '<dl>\n';
+    for (const { term, defs } of items) {
+      html += `<dt>${renderInlineMarkdown(term)}</dt>\n`;
+      for (const def of defs) html += `<dd>${renderInlineMarkdown(def)}</dd>\n`;
+    }
+    return html + '</dl>\n';
+  },
+};
+function normalizeLanguage(lang: string | undefined): string | undefined {
+  if (!lang) return undefined;
+  const lowered = lang.toLowerCase();
+  return LANGUAGE_ALIASES[lowered] ?? lowered;
+}
+
+function renderCodeBlock(code: string, lang: string | undefined): string {
+  if (lang === 'mermaid') {
+    const escaped = escapeHtml(code);
+    return `<div class="mermaid" data-src="${escaped}">${escaped}</div>\n`;
+  }
+
+  const normalized = normalizeLanguage(lang);
+  const className = normalized && hljs.getLanguage(normalized) ? ` language-${normalized}` : '';
+
+  if (className && normalized) {
+    try {
+      return `<pre><code class="hljs${className}">${hljs.highlight(code, { language: normalized, ignoreIllegals: true }).value}</code></pre>\n`;
+    } catch {
+      // fall through to auto-detection
+    }
+  }
+
+  try {
+    return `<pre><code class="hljs">${hljs.highlightAuto(code).value}</code></pre>\n`;
+  } catch {
+    return `<pre><code class="hljs">${escapeHtml(code)}</code></pre>\n`;
+  }
+}
+
+let markedPipelineInitialized = false;
 
 export function configureMarked(): void {
+  if (markedPipelineInitialized) return;
+  markedPipelineInitialized = true;
+
   marked.setOptions({ gfm: true, breaks: false });
 
   const renderer = new Renderer();
-
-  renderer.heading = function (text: string, level: number, raw: string): string {
-    const slug = slugify(raw);
-    return `<h${level} id="${slug}">${text}</h${level}>\n`;
-  };
+  const defaultTable = renderer.table.bind(renderer);
+  const defaultLink = renderer.link.bind(renderer);
+  const defaultImage = renderer.image.bind(renderer);
 
   renderer.code = function (code: string, lang: string | undefined): string {
-    let highlighted = code;
-    if (lang && hljs.getLanguage(lang)) {
-      try { highlighted = hljs.highlight(code, { language: lang }).value; }
-      catch (_) { highlighted = hljs.highlightAuto(code).value; }
-    } else {
-      try { highlighted = hljs.highlightAuto(code).value; }
-      catch (_) { highlighted = escapeHtml(code); }
-    }
-    return `<pre><code class="hljs language-${lang ?? ''}">${highlighted}</code></pre>\n`;
+    return renderCodeBlock(code, lang);
   };
 
-  marked.use({ renderer });
+  renderer.link = function (href: string, title: string | null | undefined, text: string): string {
+    return defaultLink(sanitizeMarkdownLinkUrl(href), title, text);
+  };
+
+  renderer.image = function (href: string, title: string | null | undefined, text: string): string {
+    return defaultImage(sanitizeMarkdownImageUrl(href), title ?? null, text);
+  };
+
+  renderer.table = function (header: string, body: string): string {
+    const inner = defaultTable(header, body);
+    return `<div class="markdown-table-wrap">\n${inner}</div>\n`;
+  };
+
+  marked.use({ renderer, extensions: [mathBlock, mathInline, deflist] });
+  marked.use(markedFootnote());
+}
+
+function parseMarkdownDocument(markdown: string): MarkdownResult {
+  configureMarked();
+  const toc: TocEntry[] = [];
+  const nextSlug = createHeadingSlugAllocator();
+  const baseRenderer = marked.defaults.renderer;
+  if (!baseRenderer) {
+    return {
+      html: `<p style="color:var(--muted)">Could not render markdown: renderer not configured</p>`,
+      toc: [],
+    };
+  }
+  const renderer = Object.assign(Object.create(Object.getPrototypeOf(baseRenderer)), baseRenderer);
+  renderer.heading = function (text: string, level: number): string {
+    const plain = headingSlugInput(text);
+    const slug = nextSlug(plain);
+    toc.push({ id: slug, level, text: headingDisplayText(text) });
+    return `<h${level} id="${slug}">${text}</h${level}>\n`;
+  };
+  try {
+    const rawHtml = marked.parse(stripFrontMatter(markdown), { renderer }) as string;
+    return { html: sanitizeMarkdownHtml(rawHtml), toc };
+  } catch (e) {
+    return {
+      html: `<p style="color:var(--muted)">Could not render markdown: ${escapeHtml((e as Error).message)}</p>`,
+      toc: [],
+    };
+  }
+}
+
+export function renderMarkdownWithMeta(markdown: string): MarkdownResult {
+  return parseMarkdownDocument(markdown);
 }
 
 export function renderMarkdown(markdown: string): string {
-  try { return marked.parse(markdown) as string; }
-  catch (e) {
-    return `<p style="color:var(--muted)">Could not render markdown: ${escapeHtml((e as Error).message)}</p>`;
-  }
+  return parseMarkdownDocument(markdown).html;
 }
+
+export function extractToc(source: string | Element): TocEntry[] {
+  if (typeof source === 'string') return parseMarkdownDocument(source).toc;
+  return extractTocFromDom(source);
+}
+

@@ -73,21 +73,34 @@ Serif fonts for long-form prose. Proper line lengths. Themes that don't feel lik
 
 ---
 
+## Markdown
+
+Doclume reads markdown the way you meant it to look—**one experience in the browser and in VS Code**, so the preview beside your editor matches what you’d share from the web app.
+
+- **Tables & tasks** — ship specs and changelogs without fighting the layout
+- **Code blocks** — syntax-colored fences that stay readable on every theme
+- **Diagrams** — Mermaid in the preview, no round-trip to another tool
+- **Math** — crisp formulas with KaTeX
+- **Notes & glossaries** — footnotes and definition lists when the doc calls for them
+
+---
+
 ## Web app
 
 Open markdown in any browser — no install, no account, no friction.
 
 **[→ doclume.rabisnaqvi.workers.dev](https://doclume.rabisnaqvi.workers.dev/)**
 
-- Paste markdown or open a local `.md` file
+- Paste markdown or open a local `.md`, `.prompt`, `.instructions`, `.chatagent`, or `.skill` file
 - Pick a theme, read comfortably
-- Syntax highlighting, word count, reading time
+- **Outline** (table of contents) and **in-document search** (`Ctrl+F` / `Cmd+F`)
+- **Word count** and **estimated reading time** at a glance
 
 ---
 
 ## VS Code extension
 
-Live preview beside your editor, updating on every keystroke.
+Live preview beside your editor; updates as you type. **Same rendering as the web reader**—tables, diagrams, math, footnotes—so nothing surprises you at publish time. Fonts ship with the extension (no Google Fonts fetch in the webview).
 
 **Install:**
 ```sh
@@ -120,6 +133,20 @@ Auto mode tracks your VS Code color theme — light workspace gets Manual, dark 
 **Supported file types:** `.md` · `.prompt` · `.instructions` · `.chatagent` · `.skill`
 
 ---
+
+## Testing
+
+Run the local suite with:
+
+- `pnpm test:core`
+- `pnpm test:web`
+- `pnpm test:vscode:smoke`
+- `pnpm test:vscode:visual`
+- `pnpm test:vscode`
+- `pnpm test`
+- `pnpm test:update-snapshots`
+
+For local test commands and snapshot maintenance notes, see [`tests/README.md`](./tests/README.md).
 
 ## License
 

@@ -1,6 +1,6 @@
 {
   "name": "@doclume/web",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "private": true,
   "scripts": {
@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@doclume/core": "workspace:*",
-    "marked": "^12.0.2",
+    "@fontsource-variable/inter": "^5.2.8",
+    "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@fontsource-variable/source-serif-4": "^5.2.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

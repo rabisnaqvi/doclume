@@ -52,7 +52,7 @@ VS Code extension with a two-artifact build:
 1. **Extension host** (`src/extension.ts` → `dist/extension.js`) — bundled with esbuild via `build.mjs`
 2. **Webview** (React app → `dist/webview/assets/`) — bundled with Vite
 
-The extension registers one command (`doclume.openPreview`) that opens a `WebviewPanel` beside the active editor. The extension host communicates with the webview via `panel.webview.postMessage` using `WebviewMessage` (extension→webview: `update` with markdown content, `theme` with theme id) and `HostMessage` (webview→extension: `ready`). The webview's built assets are loaded dynamically by scanning `dist/webview/assets/` at runtime.
+The extension registers one command (`doclume.openPreview`) that opens a `WebviewPanel` in the active editor group (new tab). The extension host communicates with the webview via `panel.webview.postMessage` using `WebviewMessage` (extension→webview: `update` with markdown content, `theme` with theme id) and `HostMessage` (webview→extension: `ready`). The webview's built assets are loaded dynamically by scanning `dist/webview/assets/` at runtime.
 
 ## Key constraint
 `@doclume/core` must always build before `web` or `vscode`. The root `pnpm build` script enforces this order. When working on core, run `pnpm typecheck` to validate — there are no emitted JS files to check.

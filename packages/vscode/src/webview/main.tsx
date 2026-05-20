@@ -1,10 +1,13 @@
-import { StrictMode } from 'react';
+import React, { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { bootstrapRoot } from '@doclume/core';
 import { Viewer } from './Viewer';
 import './viewer.css';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <Viewer />
-  </StrictMode>,
-);
+bootstrapRoot((root) => {
+  createRoot(root).render(
+    <StrictMode>
+      <Viewer />
+    </StrictMode>,
+  );
+});

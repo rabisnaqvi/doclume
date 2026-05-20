@@ -1,9 +1,10 @@
 {
   "name": "doclume-monorepo",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.1",
   "scripts": {
     "gen-icons": "node scripts/gen-icons.mjs",
+    "bump": "node scripts/bump-version.mjs",
     "dev": "pnpm --filter @doclume/web dev",
     "build": "pnpm --filter @doclume/core build && pnpm --filter @doclume/web build && pnpm --filter doclume build",
     "build:core": "pnpm --filter @doclume/core build",
@@ -12,10 +13,24 @@
     "deploy:worker:preview": "pnpm dlx wrangler versions upload --config wrangler.toml",
     "build:ext": "pnpm --filter doclume build",
     "package:ext": "pnpm --filter doclume package",
-    "typecheck": "tsc --build"
+    "publish:ext": "pnpm --filter doclume publish",
+    "test": "pnpm test:core && pnpm test:web && pnpm test:vscode",
+    "test:core": "vitest run --config vitest.config.ts",
+    "test:web": "playwright test --config tests/web/playwright.config.ts",
+    "test:vscode:smoke": "pnpm --filter doclume build && node tests/vscode/smoke/run.mjs",
+    "test:vscode:visual": "playwright test --config tests/vscode/playwright.config.ts",
+    "test:vscode": "pnpm test:vscode:smoke && pnpm test:vscode:visual",
+    "test:update-snapshots": "pnpm test:web -- --update-snapshots && pnpm test:vscode:visual -- --update-snapshots",
+    "typecheck": "tsc --build && tsc -p tests/tsconfig.json --noEmit",
+    "typecheck:tests": "tsc -p tests/tsconfig.json --noEmit"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@resvg/resvg-js": "^2.6.2",
-    "typescript": "^5.5.3"
+    "@types/node": "^22.19.19",
+    "@vscode/test-electron": "^2.5.2",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.5.3",
+    "vitest": "^4.1.6"
   }
 }
