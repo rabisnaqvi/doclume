@@ -171,7 +171,9 @@
     "preview:webview": "vite preview --host 127.0.0.1 --port 4175 --strictPort",
     "watch": "pnpm build:ext -- --watch",
     "package": "vsce package --no-dependencies",
-    "publish": "vsce publish --no-dependencies && ovsx publish --no-dependencies"
+    "publish:marketplace": "vsce publish --no-dependencies",
+    "publish:ovsx": "ovsx publish --no-dependencies",
+    "publish": "pnpm run publish:marketplace && pnpm run publish:ovsx"
   },
   "dependencies": {
     "@doclume/core": "workspace:*"
