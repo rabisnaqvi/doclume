@@ -17,7 +17,7 @@
     "test": "pnpm test:core && pnpm test:web && pnpm test:vscode",
     "test:core": "vitest run --config vitest.config.ts",
     "test:web": "playwright test --config tests/web/playwright.config.ts",
-    "test:vscode:smoke": "pnpm --filter doclume build:ext && node tests/vscode/smoke/run.mjs",
+    "test:vscode:smoke": "pnpm --filter doclume build && node tests/vscode/smoke/run.mjs",
     "test:vscode:visual": "playwright test --config tests/vscode/playwright.config.ts",
     "test:vscode": "pnpm test:vscode:smoke && pnpm test:vscode:visual",
     "test:update-snapshots": "pnpm test:web -- --update-snapshots && pnpm test:vscode:visual -- --update-snapshots",

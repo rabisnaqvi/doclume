@@ -16,6 +16,7 @@ test.beforeEach(async ({ page }) => {
 test('renders the viewer content', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);
+  await page.addStyleTag({ content: ':root { --reader-width: 560px !important; }' });
 
   const article = page.locator('article.markdown');
 
