@@ -198,8 +198,25 @@ const mathInline = {
 
 interface DeflistItem { term: string; defs: string[] }
 
+type AdmonitionKind = 'note' | 'tip' | 'important' | 'warning' | 'caution';
+
+const ADMONITION_TYPES = new Set<AdmonitionKind>(['note', 'tip', 'important', 'warning', 'caution']);
+
+const ADMONITION_META: Record<AdmonitionKind, { label: string; icon: string }> = {
+  note: { label: 'NOTE', icon: 'i' },
+  tip: { label: 'TIP', icon: '✦' },
+  important: { label: 'IMPORTANT', icon: '!' },
+  warning: { label: 'WARNING', icon: '▲' },
+  caution: { label: 'CAUTION', icon: '⚠' },
+};
+
 function renderInlineMarkdown(text: string): string {
   return marked.parseInline(text) as string;
+}
+
+function stripBlockquotePrefix(line: string): string {
+  if (line === '>') return '';
+  return line.replace(/^>\s?/, '');
 }
 
 const deflist = {
@@ -232,6 +249,58 @@ const deflist = {
       for (const def of defs) html += `<dd>${renderInlineMarkdown(def)}</dd>\n`;
     }
     return html + '</dl>\n';
+  },
+};
+
+const admonition = {
+  name: 'admonition',
+  level: 'block' as const,
+  start(src: string) { return src.search(/^>\s*\[!/m); },
+  tokenizer(this: any, src: string) {
+    const lines = src.split('\n');
+    const firstLine = lines[0] ?? '';
+    const firstMatch = /^>\s*\[!([A-Z]+)\]\s*(.*)$/i.exec(firstLine);
+    if (!firstMatch) return;
+
+    const kind = firstMatch[1]?.toLowerCase() as AdmonitionKind;
+    if (!ADMONITION_TYPES.has(kind)) return;
+
+    const rawLines: string[] = [];
+    const bodyLines: string[] = [];
+
+    for (const line of lines) {
+      if (!line.startsWith('>')) break;
+      rawLines.push(line);
+      bodyLines.push(stripBlockquotePrefix(line));
+    }
+
+    if (!rawLines.length) return;
+
+    const [, , firstBody = ''] = firstMatch;
+    bodyLines[0] = firstBody;
+    const body = bodyLines.join('\n').trim();
+
+    return {
+      type: 'admonition',
+      raw: rawLines.join('\n'),
+      kind,
+      tokens: this.lexer.blockTokens(body),
+    };
+  },
+  renderer(this: any, token: Record<string, unknown>) {
+    const kind = token.kind as AdmonitionKind;
+    const meta = ADMONITION_META[kind];
+    const bodyHtml = this.parser.parse(token.tokens);
+    return [
+      `<div class="admonition admonition--${kind}">`,
+      '  <div class="admonition__title">',
+      `    <span class="admonition__icon" aria-hidden="true">${escapeHtml(meta.icon)}</span>`,
+      `    <span class="admonition__label">${meta.label}</span>`,
+      '  </div>',
+      `  <div class="admonition__content">${bodyHtml}</div>`,
+      '</div>',
+      '',
+    ].join('\n');
   },
 };
 function normalizeLanguage(lang: string | undefined): string | undefined {
@@ -294,7 +363,7 @@ export function configureMarked(): void {
     return `<div class="markdown-table-wrap">\n${inner}</div>\n`;
   };
 
-  marked.use({ renderer, extensions: [mathBlock, mathInline, deflist] });
+  marked.use({ renderer, extensions: [admonition, mathBlock, mathInline, deflist] });
   marked.use(markedFootnote());
 }
 

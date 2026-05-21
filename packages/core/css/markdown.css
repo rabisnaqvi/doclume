@@ -70,6 +70,55 @@
 .markdown blockquote p { margin-bottom: 0.6em; }
 .markdown blockquote p:last-child { margin-bottom: 0; }
 
+.markdown .admonition {
+  --admonition-accent: var(--accent);
+  margin: 1.4em 0 var(--paragraph-spacing);
+  padding: 1em 1.1em 1em 1.2em;
+  border-left: 3px solid var(--admonition-accent);
+  border-radius: 0 10px 10px 0;
+  background: color-mix(in oklab, var(--admonition-accent) 12%, var(--surface));
+  color: var(--text);
+}
+
+.markdown .admonition__title {
+  display: flex;
+  align-items: center;
+  gap: 0.65em;
+  margin-bottom: 0.7em;
+  font-family: var(--ui-font);
+  font-size: 0.82em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--admonition-accent);
+}
+
+.markdown .admonition__icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--admonition-accent) 16%, transparent);
+  color: var(--admonition-accent);
+  font-size: 0.95rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.markdown .admonition__label {
+  line-height: 1.1;
+}
+
+.markdown .admonition__content > :last-child { margin-bottom: 0; }
+
+.markdown .admonition--note { --admonition-accent: #2f81f7; }
+.markdown .admonition--tip { --admonition-accent: #1f9d68; }
+.markdown .admonition--important { --admonition-accent: #7c5cff; }
+.markdown .admonition--warning { --admonition-accent: #c98a00; }
+.markdown .admonition--caution { --admonition-accent: #d73a49; }
+
 .markdown hr {
   border: 0;
   height: 1px;
@@ -844,6 +893,28 @@ html[data-theme='lamplight'] .markdown summary {
 html[data-theme='library'] .markdown dt,
 html[data-theme='lamplight'] .markdown dt { font-style: italic; }
 
+html[data-theme='library'] .markdown .admonition,
+html[data-theme='lamplight'] .markdown .admonition {
+  border-left: 0;
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--admonition-accent) 10%, var(--bg-tint));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--admonition-accent) 18%, transparent);
+  padding: 1.1em 1.25em;
+}
+
+html[data-theme='library'] .markdown .admonition__title,
+html[data-theme='lamplight'] .markdown .admonition__title {
+  font-family: var(--body-font);
+  font-style: italic;
+  letter-spacing: 0.06em;
+}
+
+html[data-theme='library'] .markdown .admonition__icon,
+html[data-theme='lamplight'] .markdown .admonition__icon {
+  background: transparent;
+  border: 1px solid color-mix(in oklab, var(--admonition-accent) 30%, transparent);
+}
+
 html[data-theme='library'] .markdown .footnotes,
 html[data-theme='lamplight'] .markdown .footnotes {
   font-style: italic;
@@ -868,6 +939,17 @@ html[data-theme='console'] .markdown mark:not([data-search-hit]) {
   background: var(--accent-soft);
   color: var(--text);
   border-radius: 3px;
+}
+
+html[data-theme='manual'] .markdown .admonition,
+html[data-theme='console'] .markdown .admonition {
+  background: color-mix(in oklab, var(--admonition-accent) 11%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--admonition-accent) 12%, transparent);
+}
+
+html[data-theme='console'] .markdown .admonition {
+  background: color-mix(in oklab, var(--admonition-accent) 16%, #11161d);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--admonition-accent) 24%, transparent);
 }
 
 html[data-theme='manual'] .markdown details,
@@ -925,6 +1007,19 @@ html[data-theme='contrast'] .markdown details {
   border: 2px solid var(--border);
   border-radius: 0;
   background: var(--surface);
+}
+
+html[data-theme='contrast'] .markdown .admonition {
+  border: 2px solid var(--admonition-accent);
+  border-radius: 0;
+  background: color-mix(in oklab, var(--admonition-accent) 16%, #000000);
+  box-shadow: none;
+}
+
+html[data-theme='contrast'] .markdown .admonition__icon {
+  background: var(--admonition-accent);
+  color: #000000;
+  border-radius: 0;
 }
 
 html[data-theme='contrast'] .markdown abbr[title] {
