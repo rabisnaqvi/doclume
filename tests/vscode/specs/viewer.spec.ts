@@ -22,5 +22,12 @@ test('renders the viewer content', async ({ page }) => {
 
   await expect(article.locator('h1')).toHaveText('Basic document');
   await expect(article.locator('ul')).toBeVisible();
+  const codeBlock = article.locator('pre').first();
+
+  await expect(article.locator('button.code-block__copy')).toBeVisible();
+  await expect(article.locator('.code-block__label')).toHaveText('typescript');
+  await codeBlock.hover();
+  await expect(codeBlock).toHaveScreenshot('viewer-code-block.png', { maxDiffPixelRatio: 0.02 });
+  await page.mouse.move(0, 0);
   await expect(page).toHaveScreenshot('viewer-content.png', { fullPage: true, maxDiffPixelRatio: 0.02 });
 });

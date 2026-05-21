@@ -4,6 +4,7 @@ import {
   configureMarked,
   renderMarkdownWithMeta,
   renderMermaidDiagrams,
+  enhanceCodeBlocks,
   runAbortableTask,
   subscribeWindowEvent,
   estimateReadingTime,
@@ -538,6 +539,10 @@ export function App() {
   useEffect(() => runAbortableTask((signal) => {
     void renderMermaidDiagrams(contentRef.current, theme, { signal });
   }), [renderedHtml, theme]);
+
+  useEffect(() => {
+    enhanceCodeBlocks(contentRef.current);
+  }, [renderedHtml]);
 
   useEffect(() => {
     setActiveId(toc[0]?.id ?? '');

@@ -247,6 +247,63 @@
   line-height: 1.62;
 }
 
+.markdown pre.code-block--enhanced {
+  padding-top: 2.9rem;
+}
+
+.markdown .code-block__overlay {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.markdown pre:hover .code-block__overlay,
+.markdown pre:focus-within .code-block__overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.markdown .code-block__label,
+.markdown .code-block__copy {
+  font-family: var(--ui-font);
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.markdown .code-block__label {
+  color: var(--muted);
+  text-transform: lowercase;
+  letter-spacing: 0.06em;
+}
+
+.markdown .code-block__copy {
+  border: 1px solid var(--border-soft);
+  background: color-mix(in oklab, var(--surface) 92%, transparent);
+  color: var(--text-soft);
+  border-radius: 999px;
+  padding: 0.38rem 0.7rem;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+}
+
+.markdown .code-block__copy:hover,
+.markdown .code-block__copy:focus-visible {
+  border-color: var(--accent);
+  color: var(--text);
+  background: color-mix(in oklab, var(--accent) 12%, var(--surface));
+}
+
+.markdown .code-block__copy:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .markdown pre code {
   display: block;
   font-size: 13.5px;
@@ -416,6 +473,11 @@ html[data-theme='lamplight'] .markdown pre {
   font-size: 0.85em;
 }
 
+html[data-theme='library'] .markdown pre.code-block--enhanced,
+html[data-theme='lamplight'] .markdown pre.code-block--enhanced {
+  padding-top: 2.4rem;
+}
+
 html[data-theme='library'] .markdown :not(pre) > code,
 html[data-theme='lamplight'] .markdown :not(pre) > code {
   background: transparent;
@@ -527,6 +589,22 @@ html[data-theme='console'] .markdown pre {
   font-size: 13.5px;
   line-height: 1.55;
   box-shadow: 0 1px 0 var(--border-soft);
+}
+
+html[data-theme='manual'] .markdown .code-block__label,
+html[data-theme='console'] .markdown .code-block__label {
+  color: var(--text-soft);
+}
+
+html[data-theme='manual'] .markdown .code-block__copy,
+html[data-theme='console'] .markdown .code-block__copy {
+  background: color-mix(in oklab, var(--surface) 94%, transparent);
+  border-color: var(--border);
+}
+
+html[data-theme='console'] .markdown .code-block__copy:hover,
+html[data-theme='console'] .markdown .code-block__copy:focus-visible {
+  background: color-mix(in oklab, var(--accent) 16%, var(--surface));
 }
 
 html[data-theme='manual'] .markdown pre code,
@@ -1016,6 +1094,19 @@ html[data-theme='contrast'] .markdown .admonition {
   box-shadow: none;
 }
 
+html[data-theme='contrast'] .markdown .code-block__copy {
+  border: 2px solid var(--text);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--text);
+}
+
+html[data-theme='contrast'] .markdown .code-block__copy:hover,
+html[data-theme='contrast'] .markdown .code-block__copy:focus-visible {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
 html[data-theme='contrast'] .markdown .admonition__icon {
   background: var(--admonition-accent);
   color: #000000;
@@ -1079,6 +1170,13 @@ html[data-theme='contrast'] .markdown .mermaid {
   background: #0a0a0a;
   border: 2px solid var(--border);
   border-radius: 0;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .markdown .code-block__overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 /* Search highlights */
