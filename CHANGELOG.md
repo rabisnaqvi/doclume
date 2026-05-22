@@ -9,6 +9,13 @@ Monorepo releases use one version across the repo root, `@doclume/core`, `@doclu
 
 ## [Unreleased]
 
+### Added
+- Admonition blocks — GitHub-style `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, and `[!CAUTION]` blockquotes now render as styled callouts with icons, themed per each of the five themes.
+- Code block copy button and language label — hovering a code block reveals a copy-to-clipboard button and a language tag; both are always visible on touch devices. Syntax-highlighted blocks now scroll horizontally without showing a scrollbar.
+
+### Fixed
+- Mermaid diagrams failed to render on first open in VS Code and Cursor; diagrams now initialize reliably via a visibility-aware two-pass warmup strategy.
+
 ## [0.2.0] - 2026-05-20
 
 ### Added

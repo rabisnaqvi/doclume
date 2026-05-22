@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 
 const scrollableMarkdown = readFileSync('tests/fixtures/scrollable-code.md', 'utf8');
+const mermaidMarkdown = readFileSync('tests/fixtures/mermaid.md', 'utf8');
 
 test('keeps code block controls pinned while scrolling horizontally', async ({ page }) => {
   await page.addInitScript((markdown) => {
@@ -59,6 +60,20 @@ test.describe('mobile code blocks', () => {
     expect(Math.abs((overlayBox?.x ?? 0) - (scrollBox?.x ?? 0))).toBeLessThan(4);
     expect(overlayBox?.width ?? 0).toBeGreaterThan((scrollBox?.width ?? 0) * 0.8);
   });
+});
+
+test('renders Mermaid on first open', async ({ page }) => {
+  await page.addInitScript((markdown) => {
+    localStorage.setItem('doclume-prefs-v1', JSON.stringify({ theme: 'manual' }));
+    localStorage.setItem('doclume-last-doc-v1', JSON.stringify({ markdown, name: 'mermaid.md' }));
+  }, mermaidMarkdown);
+
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+
+  const article = page.locator('article.markdown');
+  await expect(article.locator('.mermaid svg')).toBeVisible();
+  await expect(article.locator('.mermaid')).not.toContainText('flowchart TD');
 });
 
 test('loads the sample document', async ({ page }) => {

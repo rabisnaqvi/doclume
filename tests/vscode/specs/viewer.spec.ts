@@ -4,6 +4,7 @@ import { expect, test } from '@playwright/test';
 
 const viewerMarkdown = readFileSync('tests/fixtures/basic.md', 'utf8');
 const scrollableMarkdown = readFileSync('tests/fixtures/scrollable-code.md', 'utf8');
+const mermaidMarkdown = readFileSync('tests/fixtures/mermaid.md', 'utf8');
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript((markdown) => {
@@ -45,6 +46,23 @@ test('keeps code block controls pinned while scrolling horizontally', async ({ p
   const after = await copyButton.boundingBox();
   await expect(copyButton).toBeVisible();
   expect(Math.abs((after?.x ?? 0) - (before?.x ?? 0))).toBeLessThan(5);
+});
+
+test('renders Mermaid on first open', async ({ page }) => {
+  await page.addInitScript((markdown) => {
+    (globalThis as any).__DOCLUME_INIT__ = {
+      markdown,
+      theme: 'manual',
+    };
+    (globalThis as any).acquireVsCodeApi = () => ({ postMessage() {} });
+  }, mermaidMarkdown);
+
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+
+  const article = page.locator('article.markdown');
+  await expect(article.locator('.mermaid svg')).toBeVisible();
+  await expect(article.locator('.mermaid')).not.toContainText('flowchart TD');
 });
 
 test('renders the viewer content', async ({ page }) => {
