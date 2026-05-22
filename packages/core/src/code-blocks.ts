@@ -25,6 +25,11 @@ export function enhanceCodeBlocks(root: ParentNode | null | undefined): void {
       continue;
     }
 
+    const scroll = pre.ownerDocument.createElement('div');
+    scroll.className = 'code-block__scroll';
+    pre.insertBefore(scroll, code);
+    scroll.append(code);
+
     const overlay = pre.ownerDocument.createElement('div');
     overlay.className = OVERLAY_CLASS;
 
@@ -67,7 +72,7 @@ export function enhanceCodeBlocks(root: ParentNode | null | undefined): void {
     });
 
     overlay.append(button);
-    pre.append(overlay);
+    pre.prepend(overlay);
     pre.classList.add(ENHANCED_CLASS);
   }
 }

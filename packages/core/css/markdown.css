@@ -226,7 +226,7 @@
   font-feature-settings: 'liga' 0;
 }
 
-.markdown :not(pre) > code {
+.markdown :not(pre):not(.code-block__scroll) > code {
   background: var(--surface-2);
   padding: 0.12em 0.42em;
   border-radius: 4px;
@@ -242,7 +242,7 @@
   background: var(--surface-2);
   border: 1px solid var(--border-soft);
   border-radius: 10px;
-  overflow-x: auto;
+  overflow: visible;
   position: relative;
   line-height: 1.62;
 }
@@ -320,6 +320,18 @@
   border: 0;
   overflow-wrap: normal;
   word-break: normal;
+}
+
+.markdown .code-block__scroll {
+  overflow-x: auto;
+  min-width: 0;
+  max-width: 100%;
+  margin-bottom: -2px;
+  scrollbar-width: none;
+}
+
+.markdown .code-block__scroll::-webkit-scrollbar {
+  height: 0;
 }
 
 /* Syntax highlight tokens */
@@ -484,8 +496,8 @@ html[data-theme='lamplight'] .markdown pre.code-block--enhanced {
   padding-top: 2.4rem;
 }
 
-html[data-theme='library'] .markdown :not(pre) > code,
-html[data-theme='lamplight'] .markdown :not(pre) > code {
+html[data-theme='library'] .markdown :not(pre):not(.code-block__scroll) > code,
+html[data-theme='lamplight'] .markdown :not(pre):not(.code-block__scroll) > code {
   background: transparent;
   border: 0;
   color: var(--accent);
@@ -618,8 +630,8 @@ html[data-theme='console'] .markdown pre code {
   font-size: 13.5px;
 }
 
-html[data-theme='manual'] .markdown :not(pre) > code,
-html[data-theme='console'] .markdown :not(pre) > code {
+html[data-theme='manual'] .markdown :not(pre):not(.code-block__scroll) > code,
+html[data-theme='console'] .markdown :not(pre):not(.code-block__scroll) > code {
   background: var(--surface);
   border: 1px solid var(--border-soft);
   font-weight: 500;
@@ -1179,7 +1191,17 @@ html[data-theme='contrast'] .markdown .mermaid {
 }
 
 @media (hover: none), (pointer: coarse) {
+  .markdown pre.code-block--enhanced {
+    padding-top: 1rem;
+  }
+
   .markdown .code-block__overlay {
+    position: static;
+    display: flex;
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
     opacity: 1;
     pointer-events: auto;
   }
