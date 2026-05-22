@@ -200,10 +200,6 @@ An [inline link](https://daringfireball.net/projects/markdown/) uses the standar
 
 Email addresses get their own syntax: [send a message](mailto:hello@example.com). Anchor links [jump within the document](#code-and-its-rendering) without leaving it.
 
-Images carry meaning through their alt text, not just their source:
-
-![A flowchart showing markdown source flowing through a parser and reading environment to reach the reader](./diagram.svg)
-
 [doclume-ref]: https://github.com/rabisnaqvi/doclume
 
 ## The Extended Syntax
