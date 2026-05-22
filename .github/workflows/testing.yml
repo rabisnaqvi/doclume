@@ -15,7 +15,7 @@ jobs:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 25
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
@@ -30,7 +30,7 @@ jobs:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 25
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:core
@@ -45,9 +45,10 @@ jobs:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 25
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install-deps
       - run: pnpm exec playwright install chromium
       - run: pnpm test:web
 
@@ -61,8 +62,9 @@ jobs:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 25
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install-deps
       - run: pnpm exec playwright install chromium
       - run: xvfb-run -a --server-args="-screen 0 1920x1080x24" pnpm test:vscode

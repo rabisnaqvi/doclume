@@ -14,3 +14,4 @@ docs/*
 .DS_Store
 .vscode-test
 test-results
+.pnpm-store
