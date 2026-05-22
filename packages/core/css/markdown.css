@@ -277,9 +277,15 @@
 }
 
 .markdown .code-block__label {
-  color: var(--muted);
+  color: var(--text);
   text-transform: lowercase;
   letter-spacing: 0.06em;
+  padding: 0.28rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+  background: color-mix(in oklab, var(--surface) 88%, transparent);
+  box-shadow: 0 2px 10px color-mix(in oklab, black 12%, transparent);
+  text-shadow: 0 1px 1px color-mix(in oklab, var(--bg) 40%, transparent);
 }
 
 .markdown .code-block__copy {
