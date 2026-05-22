@@ -31,9 +31,12 @@ test('keeps code block controls pinned while scrolling horizontally', async ({ p
   const article = page.locator('article.markdown');
   const codeBlock = article.locator('pre').first();
   const copyButton = article.locator('button.code-block__copy').first();
+  const overlay = codeBlock.locator('.code-block__overlay').first();
   const scroll = codeBlock.locator('.code-block__scroll').first();
 
+  await expect(overlay).toHaveCSS('opacity', '0');
   await codeBlock.hover();
+  await expect(overlay).toHaveCSS('opacity', '1');
   await expect(copyButton).toBeVisible();
 
   const before = await copyButton.boundingBox();
@@ -75,10 +78,12 @@ test('renders the viewer content', async ({ page }) => {
   await expect(article.locator('h1')).toHaveText('Basic document');
   await expect(article.locator('ul')).toBeVisible();
   const codeBlock = article.locator('pre').first();
+  const overlay = codeBlock.locator('.code-block__overlay').first();
 
-  await expect(article.locator('button.code-block__copy')).toBeVisible();
+  await expect(overlay).toHaveCSS('opacity', '0');
   await expect(article.locator('.code-block__label')).toHaveText('typescript');
   await codeBlock.hover();
+  await expect(overlay).toHaveCSS('opacity', '1');
   await expect(codeBlock).toHaveScreenshot('viewer-code-block.png', { maxDiffPixelRatio: 0.02 });
   await page.mouse.move(0, 0);
   await expect(page).toHaveScreenshot('viewer-content.png', { fullPage: true, maxDiffPixelRatio: 0.02 });

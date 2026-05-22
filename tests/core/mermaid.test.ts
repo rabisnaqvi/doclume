@@ -95,6 +95,56 @@ describe('renderMermaidDiagrams', () => {
     expect(node.innerHTML).toContain('<svg');
   });
 
+  it('does not duplicate an in-flight render when rechecked', async () => {
+    document.body.innerHTML = `
+      <div id="root">
+        <div class="mermaid" data-src="flowchart TD\nA-->B"></div>
+      </div>
+    `;
+
+    const root = document.getElementById('root');
+    const node = root?.querySelector('.mermaid') as HTMLElement;
+    const rectSpy = vi.spyOn(node, 'getBoundingClientRect');
+    rectSpy.mockReturnValue({
+      x: 0, y: 0, top: 0, left: 0, right: 0, bottom: 0,
+      width: 0, height: 0, toJSON() {},
+    });
+
+    let releaseRender: (() => void) | undefined;
+    const renderGate = new Promise<void>((resolve) => {
+      releaseRender = resolve;
+    });
+    mermaidModule.render.mockImplementationOnce(async (_id: string, code: string) => {
+      await renderGate;
+      return {
+        svg: `<svg xmlns="http://www.w3.org/2000/svg"><text>${code}</text></svg>`,
+      };
+    });
+
+    await renderMermaidDiagrams(root, 'manual', { runtime: mermaidModule });
+    expect(mermaidModule.render).toHaveBeenCalledTimes(0);
+    expect(FakeIntersectionObserver.instances[0]?.observed.has(node)).toBe(true);
+
+    rectSpy.mockReturnValue({
+      x: 0, y: 0, top: 0, left: 0, right: 10, bottom: 10,
+      width: 10, height: 10, toJSON() {},
+    });
+    FakeIntersectionObserver.instances[0]?.trigger(node, true);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mermaidModule.render).toHaveBeenCalledTimes(1);
+
+    document.dispatchEvent(new Event('visibilitychange'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mermaidModule.render).toHaveBeenCalledTimes(1);
+
+    releaseRender?.();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(node.innerHTML).toContain('<svg');
+  });
+
   it('stops on abort before intersection', async () => {
     document.body.innerHTML = `
       <div id="root">

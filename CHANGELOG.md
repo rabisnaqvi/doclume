@@ -14,7 +14,7 @@ Monorepo releases use one version across the repo root, `@doclume/core`, `@doclu
 - Code block copy button and language label — hovering a code block reveals a copy-to-clipboard button and a language tag; both are always visible on touch devices. Syntax-highlighted blocks now scroll horizontally without showing a scrollbar.
 
 ### Fixed
-- Mermaid diagrams failed to render on first open in VS Code and Cursor; diagrams now initialize reliably via a visibility-aware two-pass warmup strategy.
+- Mermaid diagrams failed to render on first open in VS Code and Cursor; diagrams now initialize reliably via visibility-aware deferred rendering with bootstrap parsing and do not duplicate work when visibility or resize rechecks fire during an in-flight render.
 
 ## [0.2.0] - 2026-05-20
 

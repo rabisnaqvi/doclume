@@ -43,7 +43,7 @@ All markdown rendering and shared document logic lives here. The web and VS Code
 
 Key modules:
 - `markdown.ts` — marked-based pipeline with KaTeX, footnotes, definition lists
-- `mermaid.ts` — visibility-aware lazy renderer (IntersectionObserver + ResizeObserver); dynamic-imports mermaid at runtime; uses two-pass warmup for perf
+ - `mermaid.ts` — visibility-aware lazy renderer (IntersectionObserver + ResizeObserver); dynamic-imports mermaid at runtime; uses a one-time `parse` bootstrap before rendering
 - `code-blocks.ts` — syntax highlighting via highlight.js, copy controls, language labels
 - `toc.ts` — table of contents extraction
 - `stats.ts` — word count / reading time

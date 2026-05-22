@@ -51,6 +51,7 @@ export async function renderMermaidDiagrams(
   if (aborted()) return;
 
   const pending = new Set(nodes);
+  const inFlight = new WeakSet<HTMLElement>();
   let observer: IntersectionObserver | null = null;
   let resizeObserver: ResizeObserver | null = null;
   let runtimePromise: Promise<MermaidRuntime> | null = null;
@@ -98,6 +99,7 @@ export async function renderMermaidDiagrams(
 
   const renderOne = async (node: HTMLElement): Promise<'rendered' | 'deferred' | 'failed' | 'aborted'> => {
     if (aborted() || !pending.has(node)) return 'aborted';
+    if (inFlight.has(node)) return 'deferred';
     if (!isRenderable(node)) return 'deferred';
 
     const code = node.dataset.src ?? node.textContent ?? '';
@@ -107,6 +109,7 @@ export async function renderMermaidDiagrams(
       return 'failed';
     }
 
+    inFlight.add(node);
     try {
       const mermaid = await ensureConfigured();
       if (aborted()) return 'aborted';
@@ -121,6 +124,8 @@ export async function renderMermaidDiagrams(
       pending.delete(node);
       observer?.unobserve(node);
       return 'failed';
+    } finally {
+      inFlight.delete(node);
     }
   };
 

@@ -104,5 +104,6 @@ test('loads the sample document', async ({ page }) => {
 
   await copyButton.click();
   await expect(copyButton).toHaveText('Copied ✓');
+  await expect(reader.locator('article.markdown .mermaid svg')).toHaveCount(2);
   await expect(reader).toHaveScreenshot('reader-sample.png', { maxDiffPixelRatio: 0.06 });
 });
