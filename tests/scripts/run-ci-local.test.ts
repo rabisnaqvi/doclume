@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { buildActArgs, buildPresetGraph, parseArgs, scheduleNodes } from '../../scripts/run-ci-local.mjs';
+import { describe, expect, it, vi } from 'vitest';
+import { buildActArgs, buildPresetGraph, parseArgs, printRunSummary, scheduleNodes } from '../../scripts/run-ci-local.mjs';
 
 describe('run-ci-local CLI parsing', () => {
   it('accepts repeated jobs and concurrency', () => {
@@ -110,6 +110,22 @@ describe('run-ci-local CLI parsing', () => {
     expect(started).toEqual(['install', 'typecheck']);
     expect(summary.failed).toEqual(['typecheck']);
     expect(summary.skipped).toEqual(['core:test']);
+  });
+
+  it('prints a final summary', () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    printRunSummary({
+      succeeded: ['install'],
+      failed: ['typecheck'],
+      skipped: ['core:test'],
+    });
+
+    expect(logSpy).toHaveBeenNthCalledWith(1, 'Summary:');
+    expect(logSpy).toHaveBeenNthCalledWith(2, '  succeeded: install');
+    expect(logSpy).toHaveBeenNthCalledWith(3, '  failed: typecheck');
+    expect(logSpy).toHaveBeenNthCalledWith(4, '  skipped: core:test');
+    logSpy.mockRestore();
   });
 
   it('keeps single-job act behavior', () => {

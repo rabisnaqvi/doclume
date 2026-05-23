@@ -695,6 +695,15 @@ function buildJobNodes(jobNames, baseOptions) {
   });
 }
 
+export function printRunSummary(summary) {
+  const formatList = (items) => (items.length > 0 ? items.join(', ') : '<none>');
+
+  console.log('Summary:');
+  console.log(`  succeeded: ${formatList(summary.succeeded)}`);
+  console.log(`  failed: ${formatList(summary.failed)}`);
+  console.log(`  skipped: ${formatList(summary.skipped)}`);
+}
+
 function printJobBatchDryRun(jobNodes, concurrency) {
   console.log('Resolved job batch:');
   console.log(`  concurrency: ${concurrency}`);
@@ -722,6 +731,7 @@ async function runPresetSteps(stepNames, { concurrency, dryRun, verbose, env }) 
     execute: (node) => runPrefixedCommand(node.name, node.command, node.args, env, verbose),
   });
 
+  printRunSummary(summary);
   return summary.exitCode;
 }
 
@@ -738,6 +748,7 @@ async function runJobBatch(jobNames, { concurrency, verbose, env, workflow, keep
     execute: (node) => runPrefixedCommand(node.name, node.command, node.args, env, verbose),
   });
 
+  printRunSummary(summary);
   return summary.exitCode;
 }
 
