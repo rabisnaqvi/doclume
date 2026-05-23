@@ -2,6 +2,11 @@
   "name": "doclume-monorepo",
   "private": true,
   "version": "0.2.0",
+  "pnpm": {
+    "overrides": {
+      "qs": "^6.15.2"
+    }
+  },
   "scripts": {
     "gen-icons": "node scripts/gen-icons.mjs",
     "bump": "node scripts/bump-version.mjs",
@@ -9,6 +14,7 @@
     "dev": "pnpm --filter @doclume/web dev",
     "build": "pnpm --filter @doclume/core build && pnpm --filter @doclume/web build && pnpm --filter doclume build",
     "build:core": "pnpm --filter @doclume/core build",
+    "prepare": "husky",
     "build:web": "pnpm --filter @doclume/web build",
     "deploy:worker": "pnpm dlx wrangler deploy --config wrangler.toml",
     "deploy:worker:preview": "pnpm dlx wrangler versions upload --config wrangler.toml",
@@ -30,6 +36,7 @@
     "@resvg/resvg-js": "^2.6.2",
     "@types/node": "^22.19.19",
     "@vscode/test-electron": "^2.5.2",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "typescript": "^5.5.3",
     "vitest": "^4.1.6"
