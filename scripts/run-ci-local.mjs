@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from 'node:child_process';
 import { constants as osConstants } from 'node:os';
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 const DEFAULT_WORKFLOW = '.github/workflows/testing.yml';
 const TERMINATION_SIGNALS = process.platform === 'win32'
@@ -10,16 +8,15 @@ const TERMINATION_SIGNALS = process.platform === 'win32'
   : ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGQUIT'];
 
 const PRESETS = {
-  install: { command: 'pnpm', args: ['install', '--frozen-lockfile'], deps: [] },
-  typecheck: { command: 'pnpm', args: ['typecheck'], deps: ['install'] },
-  'core:test': { command: 'pnpm', args: ['test:core'], deps: ['install'] },
-  'web:deps': { command: 'pnpm', args: ['exec', 'playwright', 'install-deps'], deps: ['install'] },
-  'web:browser': { command: 'pnpm', args: ['exec', 'playwright', 'install', 'chromium'], deps: ['install'] },
-  'web:test': { command: 'pnpm', args: ['test:web'], deps: ['install', 'web:deps', 'web:browser'] },
+  install: { command: 'pnpm', args: ['install', '--frozen-lockfile'] },
+  typecheck: { command: 'pnpm', args: ['typecheck'] },
+  'core:test': { command: 'pnpm', args: ['test:core'] },
+  'web:deps': { command: 'pnpm', args: ['exec', 'playwright', 'install-deps'] },
+  'web:browser': { command: 'pnpm', args: ['exec', 'playwright', 'install', 'chromium'] },
+  'web:test': { command: 'pnpm', args: ['test:web'] },
   'vscode:test': {
     command: 'xvfb-run',
     args: ['-a', '--server-args=-screen 0 1920x1080x24', 'pnpm', 'test:vscode'],
-    deps: ['install', 'web:deps', 'web:browser'],
   },
 };
 
@@ -30,51 +27,39 @@ function usage() {
 
   return `Usage:
   node scripts/run-ci-local.mjs --help
-  node scripts/run-ci-local.mjs --job <name> [--job <name> ...] [--workflow <path>] [--container-architecture <arch>] [--keep-container] [--fresh] [--concurrency <n>] [--dry-run] [--verbose]
-  node scripts/run-ci-local.mjs --step <name> [--step <name> ...] [--concurrency <n>] [--dry-run] [--verbose]
+  node scripts/run-ci-local.mjs --job <name> [--workflow <path>] [--container-architecture <arch>] [--keep-container] [--dry-run] [--verbose]
+  node scripts/run-ci-local.mjs --step <name> [--step <name> ...] [--dry-run] [--verbose]
 
 Modes:
   Workflow/job mode runs a GitHub Actions job with act.
-    - --job <name> selects workflow jobs (repeatable)
+    - --job <name> selects the workflow job
     - --workflow defaults to ${DEFAULT_WORKFLOW}
-    - job runs reuse act containers by default; pass --fresh for a clean container
     - --container-architecture passes an architecture through to act
     - --keep-container leaves the container behind for inspection
-    - --concurrency <n> runs independent jobs/steps in parallel (default: 1)
 
   Preset/step mode runs local CI presets in the order provided.
     - --step <name> is repeatable and preserves order
     - at least one --step is required in this mode
-    - job batches and step batches remain mutually exclusive
 
 Presets:
 ${presetLines}
 
 Options:
   --help, -h                 Show this help and exit 0
-  --job <name>               Run workflow jobs via act (repeatable)
+  --job <name>               Run the named workflow job via act
   --step <name>              Run a local preset step (repeatable)
   --workflow <path>          Workflow file for job mode (default: ${DEFAULT_WORKFLOW})
   --container-architecture   Container architecture to pass to act (default: act's default)
   --keep-container           Keep the container after the run (default: off)
-  --fresh                    Run the job in a clean container (default: reuse)
-  --concurrency <n>          Run independent jobs/steps in parallel (default: 1)
   --dry-run                  Print the resolved command without running it (default: off)
   --verbose                  Print extra diagnostic information (default: off)
 `;
 }
 
-class CliError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = 'CliError';
-  }
-}
-
 function fail(message) {
   console.error(`Error: ${message}\n`);
   console.error(usage());
-  throw new CliError(message);
+  process.exit(1);
 }
 
 function readValue(argv, index, flag) {
@@ -85,25 +70,14 @@ function readValue(argv, index, flag) {
   return value;
 }
 
-function parsePositiveInteger(value, flag) {
-  if (!/^[1-9]\d*$/.test(value)) {
-    fail(`${flag} requires a positive integer`);
-  }
-
-  return Number(value);
-}
-
-export function parseArgs(argv) {
+function parseArgs(argv) {
   const options = {
     help: false,
     job: null,
-    jobs: [],
     steps: [],
     workflow: DEFAULT_WORKFLOW,
     containerArchitecture: null,
     keepContainer: false,
-    reuse: true,
-    concurrency: 1,
     dryRun: false,
     verbose: false,
   };
@@ -121,11 +95,6 @@ export function parseArgs(argv) {
       continue;
     }
 
-    if (arg === '--fresh') {
-      options.reuse = false;
-      continue;
-    }
-
     if (arg === '--dry-run') {
       options.dryRun = true;
       continue;
@@ -136,43 +105,25 @@ export function parseArgs(argv) {
       continue;
     }
 
-    if (arg === '--concurrency') {
-      options.concurrency = parsePositiveInteger(readValue(argv, i, '--concurrency'), '--concurrency');
-      i += 1;
-      continue;
-    }
-
-    if (arg.startsWith('--concurrency=')) {
-      options.concurrency = parsePositiveInteger(arg.slice('--concurrency='.length), '--concurrency');
-      continue;
-    }
-
     if (arg === '--job') {
-      if (options.steps.length > 0) fail('--job and --step are mutually exclusive');
-      options.jobs.push(readValue(argv, i, '--job'));
-      options.job ??= options.jobs[0];
+      options.job = readValue(argv, i, '--job');
       i += 1;
       continue;
     }
 
     if (arg.startsWith('--job=')) {
-      if (options.steps.length > 0) fail('--job and --step are mutually exclusive');
-      const value = arg.slice('--job='.length);
-      if (!value) fail('--job requires a value');
-      options.jobs.push(value);
-      options.job ??= options.jobs[0];
+      options.job = arg.slice('--job='.length);
+      if (!options.job) fail('--job requires a value');
       continue;
     }
 
     if (arg === '--step') {
-      if (options.jobs.length > 0) fail('--job and --step are mutually exclusive');
       options.steps.push(readValue(argv, i, '--step'));
       i += 1;
       continue;
     }
 
     if (arg.startsWith('--step=')) {
-      if (options.jobs.length > 0) fail('--job and --step are mutually exclusive');
       const value = arg.slice('--step='.length);
       if (!value) fail('--step requires a value');
       options.steps.push(value);
@@ -484,12 +435,8 @@ async function resolveDockerHost(verbose) {
   return null;
 }
 
-export function buildActArgs(options) {
+function buildActArgs(options) {
   const args = ['-W', options.workflow, '-j', options.job];
-
-  if (options.reuse) {
-    args.push('--reuse');
-  }
 
   if (!options.keepContainer) {
     args.push('--rm');
@@ -502,44 +449,17 @@ export function buildActArgs(options) {
   return args;
 }
 
-function getPreset(name) {
+function resolvePreset(name) {
   const preset = PRESETS[name];
   if (!preset) {
     fail(`Unknown preset: ${name}`);
   }
 
-  return { name, command: preset.command, args: [...preset.args], deps: [...preset.deps] };
+  return preset;
 }
 
-export function buildPresetGraph(stepNames) {
-  const requested = new Set();
-  const nodesByName = new Map();
-  const order = [];
-
-  function visit(name) {
-    if (nodesByName.has(name)) {
-      return;
-    }
-
-    const preset = getPreset(name);
-    for (const dep of preset.deps) {
-      visit(dep);
-    }
-
-    nodesByName.set(name, preset);
-    order.push(preset);
-  }
-
-  for (const name of stepNames) {
-    if (requested.has(name)) {
-      fail(`Duplicate preset in batch: ${name}`);
-    }
-
-    requested.add(name);
-    visit(name);
-  }
-
-  return { nodes: order, order, byName: nodesByName };
+function formatPresetCommand(preset) {
+  return formatCommand(preset.command, preset.args);
 }
 
 async function runCommand(command, args, env) {
@@ -560,196 +480,31 @@ async function runAct(args, env) {
   return runCommand('act', args, env);
 }
 
-function writePrefixedLines(label, text, writer) {
-  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  for (const line of normalized.split('\n')) {
-    if (!line) {
-      continue;
-    }
-
-    writer(`[${label}] ${line}`);
-  }
-}
-
-async function runPrefixedCommand(label, command, args, env, verbose = false) {
-  const resolvedCommand = formatCommand(command, args);
-  if (verbose) {
-    console.error(`[${label}] running ${resolvedCommand}`);
-  }
-
-  const result = await waitForChild(command, args, {
-    stdio: ['ignore', 'pipe', 'pipe'],
-    env,
-    captureOutput: true,
-  });
-
-  if (result.stdout) {
-    writePrefixedLines(label, result.stdout, console.log);
-  }
-
-  if (result.stderr) {
-    writePrefixedLines(label, result.stderr, console.error);
-  }
-
-  if (result.error) {
-    throw result.error;
-  }
-
-  if (result.signal) {
-    return signalExitCode(result.signal);
-  }
-
-  return result.code ?? 0;
-}
-
-export async function scheduleNodes(nodes, { concurrency = 1, execute }) {
-  if (!Number.isInteger(concurrency) || concurrency < 1) {
-    fail('--concurrency requires a positive integer');
-  }
-
-  const states = new Map(nodes.map((node) => [node.name, 'pending']));
-  const started = [];
-  const succeeded = [];
-  const failed = [];
-  const skipped = [];
-  const running = new Map();
-  let stopScheduling = false;
-  let exitCode = 0;
-
-  for (const node of nodes) {
-    for (const dep of node.deps) {
-      if (!states.has(dep)) {
-        fail(`Unknown dependency: ${dep}`);
-      }
-    }
-  }
-
-  const canRun = (node) => node.deps.every((dep) => states.get(dep) === 'succeeded');
-
-  const launch = (node) => {
-    states.set(node.name, 'running');
-    started.push(node.name);
-
-    const promise = Promise.resolve()
-      .then(() => execute(node))
-      .then(
-        (result) => ({ node, code: typeof result === 'number' ? result : Number(result ?? 0), error: null }),
-        (error) => ({ node, code: 1, error }),
-      );
-
-    running.set(node.name, promise);
-  };
-
-  while (true) {
-    while (!stopScheduling && running.size < concurrency) {
-      const next = nodes.find((node) => states.get(node.name) === 'pending' && canRun(node));
-      if (!next) {
-        break;
-      }
-
-      launch(next);
-    }
-
-    if (running.size === 0) {
-      break;
-    }
-
-    const settled = await Promise.race(running.values());
-    running.delete(settled.node.name);
-    if (settled.error || settled.code !== 0) {
-      states.set(settled.node.name, 'failed');
-      failed.push(settled.node.name);
-      exitCode ||= settled.code || 1;
-      stopScheduling = true;
-      continue;
-    }
-
-    states.set(settled.node.name, 'succeeded');
-    succeeded.push(settled.node.name);
-  }
-
-  for (const node of nodes) {
-    if (states.get(node.name) === 'pending') {
-      states.set(node.name, 'skipped');
-      skipped.push(node.name);
-    }
-  }
-
-  return { started, succeeded, failed, skipped, exitCode };
-}
-
-function buildJobNodes(jobNames, baseOptions) {
-  const requested = new Set();
-  return jobNames.map((jobName) => {
-    if (requested.has(jobName)) {
-      fail(`Duplicate job in batch: ${jobName}`);
-    }
-
-    requested.add(jobName);
-    return {
-      name: jobName,
-      command: 'act',
-      args: buildActArgs({ ...baseOptions, job: jobName }),
-      deps: [],
-    };
-  });
-}
-
-export function printRunSummary(summary) {
-  const formatList = (items) => (items.length > 0 ? items.join(', ') : '<none>');
-
-  console.log('Summary:');
-  console.log(`  succeeded: ${formatList(summary.succeeded)}`);
-  console.log(`  failed: ${formatList(summary.failed)}`);
-  console.log(`  skipped: ${formatList(summary.skipped)}`);
-}
-
-function printJobBatchDryRun(jobNodes, concurrency) {
-  console.log('Resolved job batch:');
-  console.log(`  concurrency: ${concurrency}`);
-  for (const [index, jobNode] of jobNodes.entries()) {
-    console.log(`  ${index + 1}. ${jobNode.name}: ${formatCommand(jobNode.command, jobNode.args)}`);
-  }
-}
-
-async function runPresetSteps(stepNames, { concurrency, dryRun, verbose, env }) {
-  const graph = buildPresetGraph(stepNames);
-  const resolved = graph.order;
-  const commandList = resolved.map((step) => formatCommand(step.command, step.args));
+async function runPresetSteps(stepNames, { dryRun, verbose, env }) {
+  const resolved = stepNames.map((name) => ({ name, ...resolvePreset(name) }));
+  const commandList = resolved.map((step) => formatPresetCommand(step));
 
   if (dryRun) {
     console.log('Resolved preset commands:');
-    console.log(`  concurrency: ${concurrency}`);
     for (const [index, step] of resolved.entries()) {
       console.log(`  ${index + 1}. ${step.name}: ${commandList[index]}`);
     }
     return 0;
   }
 
-  const summary = await scheduleNodes(resolved, {
-    concurrency,
-    execute: (node) => runPrefixedCommand(node.name, node.command, node.args, env, verbose),
-  });
+  for (const [index, step] of resolved.entries()) {
+    const resolvedCommand = commandList[index];
+    if (verbose) {
+      console.error(`Verbose: running ${step.name}: ${resolvedCommand}`);
+    }
 
-  printRunSummary(summary);
-  return summary.exitCode;
-}
+    const exitCode = await runCommand(step.command, step.args, env);
+    if (exitCode !== 0) {
+      return exitCode;
+    }
+  }
 
-async function runJobBatch(jobNames, { concurrency, verbose, env, workflow, keepContainer, reuse, containerArchitecture }) {
-  const jobNodes = buildJobNodes(jobNames, {
-    workflow,
-    keepContainer,
-    reuse,
-    containerArchitecture,
-  });
-
-  const summary = await scheduleNodes(jobNodes, {
-    concurrency,
-    execute: (node) => runPrefixedCommand(node.name, node.command, node.args, env, verbose),
-  });
-
-  printRunSummary(summary);
-  return summary.exitCode;
+  return 0;
 }
 
 async function main() {
@@ -760,19 +515,17 @@ async function main() {
     return 0;
   }
 
-  if (options.jobs.length > 0 && options.steps.length > 0) {
+  if (options.job && options.steps.length > 0) {
     fail('--job and --step are mutually exclusive');
   }
 
-  if (options.jobs.length === 0 && options.steps.length === 0) {
+  if (!options.job && options.steps.length === 0) {
     fail('Specify either --job <name> or one or more --step <name> flags');
   }
 
-  const env = { ...process.env };
-
   if (options.steps.length > 0) {
+    const env = { ...process.env };
     return runPresetSteps(options.steps, {
-      concurrency: options.concurrency,
       dryRun: options.dryRun,
       verbose: options.verbose,
       env,
@@ -780,31 +533,10 @@ async function main() {
   }
 
   const dockerHost = await resolveDockerHost(options.verbose);
+  const env = { ...process.env };
+
   if (dockerHost) {
     env.DOCKER_HOST = dockerHost;
-  }
-
-  if (options.jobs.length > 1) {
-    if (options.dryRun) {
-      console.log(`Resolved DOCKER_HOST: ${dockerHost ?? '<unset>'}`);
-      printJobBatchDryRun(buildJobNodes(options.jobs, {
-        workflow: options.workflow,
-        keepContainer: options.keepContainer,
-        reuse: options.reuse,
-        containerArchitecture: options.containerArchitecture,
-      }), options.concurrency);
-      return 0;
-    }
-
-    return runJobBatch(options.jobs, {
-      concurrency: options.concurrency,
-      verbose: options.verbose,
-      env,
-      workflow: options.workflow,
-      keepContainer: options.keepContainer,
-      reuse: options.reuse,
-      containerArchitecture: options.containerArchitecture,
-    });
   }
 
   const actArgs = buildActArgs(options);
@@ -826,36 +558,21 @@ async function main() {
   return runAct(actArgs, env);
 }
 
-function isDirectExecution() {
-  if (!process.argv[1]) {
-    return false;
-  }
+main()
+  .then((exitCode) => {
+    process.exit(exitCode);
+  })
+  .catch((error) => {
+    if (error?.signal) {
+      process.exit(signalExitCode(error.signal));
+      return;
+    }
 
-  return resolve(fileURLToPath(import.meta.url)) === resolve(process.argv[1]);
-}
+    if (error?.code === 'ENOENT' && error?.path === 'act') {
+      console.error('Error: act is not installed or not on PATH');
+    } else {
+      console.error(error instanceof Error ? error.stack || error.message : String(error));
+    }
 
-if (isDirectExecution()) {
-  main()
-    .then((exitCode) => {
-      process.exit(exitCode);
-    })
-    .catch((error) => {
-      if (error?.signal) {
-        process.exit(signalExitCode(error.signal));
-        return;
-      }
-
-      if (error instanceof CliError) {
-        process.exit(1);
-        return;
-      }
-
-      if (error?.code === 'ENOENT' && error?.path === 'act') {
-        console.error('Error: act is not installed or not on PATH');
-      } else {
-        console.error(error instanceof Error ? error.stack || error.message : String(error));
-      }
-
-      process.exit(1);
-    });
-}
+    process.exit(1);
+  });
