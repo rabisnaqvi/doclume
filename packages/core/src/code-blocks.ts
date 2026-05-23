@@ -6,6 +6,10 @@ const COPY_TEXT = 'Copy';
 const COPIED_TEXT = 'Copied ✓';
 const RESET_DELAY_MS = 2000;
 
+const boundRoots = new WeakSet<EventTarget>();
+const handledCopyClicks = new WeakSet<Event>();
+const resetHandles = new WeakMap<HTMLButtonElement, ReturnType<typeof setTimeout>>();
+
 function getLanguageLabel(code: HTMLElement): string | null {
   for (const className of Array.from(code.classList)) {
     if (className.startsWith('language-') && className.length > 'language-'.length) {
@@ -16,8 +20,75 @@ function getLanguageLabel(code: HTMLElement): string | null {
   return null;
 }
 
+function bindCopyHandler(root: ParentNode): void {
+  const host = root as EventTarget;
+  if (typeof host.addEventListener !== 'function' || boundRoots.has(host)) {
+    return;
+  }
+
+  boundRoots.add(host);
+  host.addEventListener('click', async (event) => {
+    const target = event.target as Element | null;
+    if (!target || typeof target.closest !== 'function') {
+      return;
+    }
+
+    const button = target.closest(`button.${COPY_CLASS}`);
+    if (!button || button.tagName !== 'BUTTON') {
+      return;
+    }
+    const copyButton = button as HTMLButtonElement;
+
+    const pre = copyButton.closest('pre');
+    if (!pre || pre.tagName !== 'PRE') {
+      return;
+    }
+
+    const copyLabel = copyButton.querySelector<HTMLSpanElement>(`.code-block__copy-label`);
+    if (!copyLabel) {
+      return;
+    }
+
+    try {
+      if (handledCopyClicks.has(event)) {
+        return;
+      }
+      handledCopyClicks.add(event);
+
+      const clipboard = copyButton.ownerDocument.defaultView?.navigator.clipboard;
+      if (!clipboard) {
+        return;
+      }
+
+      const code = pre.querySelector<HTMLElement>('code.hljs');
+      await clipboard.writeText(code?.textContent ?? '');
+      copyLabel.textContent = COPIED_TEXT;
+
+      const existingHandle = resetHandles.get(copyButton);
+      if (existingHandle) {
+        clearTimeout(existingHandle);
+      }
+
+      const resetHandle = setTimeout(() => {
+        copyLabel.textContent = COPY_TEXT;
+        resetHandles.delete(copyButton);
+      }, RESET_DELAY_MS);
+
+      resetHandles.set(copyButton, resetHandle);
+    } catch {
+      copyLabel.textContent = COPY_TEXT;
+    }
+  });
+}
+
 export function enhanceCodeBlocks(root: ParentNode | null | undefined): void {
-  const blocks = Array.from(root?.querySelectorAll<HTMLElement>('pre > code.hljs') ?? []);
+  if (!root) {
+    return;
+  }
+
+  bindCopyHandler(root);
+
+  const blocks = Array.from(root.querySelectorAll<HTMLElement>('pre > code.hljs'));
 
   for (const code of blocks) {
     const pre = code.parentElement;
@@ -44,32 +115,17 @@ export function enhanceCodeBlocks(root: ParentNode | null | undefined): void {
     const button = pre.ownerDocument.createElement('button');
     button.type = 'button';
     button.className = COPY_CLASS;
-    button.textContent = COPY_TEXT;
 
-    let resetHandle: ReturnType<typeof setTimeout> | undefined;
+    const icon = pre.ownerDocument.createElement('span');
+    icon.className = 'code-block__copy-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = '⧉';
 
-    button.addEventListener('click', async () => {
-      try {
-        const clipboard = pre.ownerDocument.defaultView?.navigator.clipboard;
-        if (!clipboard) {
-          return;
-        }
+    const label = pre.ownerDocument.createElement('span');
+    label.className = 'code-block__copy-label';
+    label.textContent = COPY_TEXT;
 
-        await clipboard.writeText(code.textContent ?? '');
-        button.textContent = COPIED_TEXT;
-
-        if (resetHandle) {
-          clearTimeout(resetHandle);
-        }
-
-        resetHandle = setTimeout(() => {
-          button.textContent = COPY_TEXT;
-          resetHandle = undefined;
-        }, RESET_DELAY_MS);
-      } catch {
-        button.textContent = COPY_TEXT;
-      }
-    });
+    button.append(icon, label);
 
     overlay.append(button);
     pre.prepend(overlay);
