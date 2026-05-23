@@ -26,6 +26,7 @@ Keep `caveman` and `using-superpowers` active by default.
 
 ## Change hygiene
 - Add user-visible changes to `CHANGELOG.md` under `## [Unreleased]`.
+- Do not commit `docs/superpowers/specs/*` or `docs/superpowers/plans/*` unless the user explicitly approves committing them; keep design/spec/plan docs out of git history by default.
 - Keep changes small and focused.
 - Do not reshuffle packages unless the task requires it.
 - Avoid unrelated refactors.
