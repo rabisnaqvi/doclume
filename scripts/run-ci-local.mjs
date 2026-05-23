@@ -10,15 +10,16 @@ const TERMINATION_SIGNALS = process.platform === 'win32'
   : ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGQUIT'];
 
 const PRESETS = {
-  install: { command: 'pnpm', args: ['install', '--frozen-lockfile'] },
-  typecheck: { command: 'pnpm', args: ['typecheck'] },
-  'core:test': { command: 'pnpm', args: ['test:core'] },
-  'web:deps': { command: 'pnpm', args: ['exec', 'playwright', 'install-deps'] },
-  'web:browser': { command: 'pnpm', args: ['exec', 'playwright', 'install', 'chromium'] },
-  'web:test': { command: 'pnpm', args: ['test:web'] },
+  install: { command: 'pnpm', args: ['install', '--frozen-lockfile'], deps: [] },
+  typecheck: { command: 'pnpm', args: ['typecheck'], deps: ['install'] },
+  'core:test': { command: 'pnpm', args: ['test:core'], deps: ['install'] },
+  'web:deps': { command: 'pnpm', args: ['exec', 'playwright', 'install-deps'], deps: ['install'] },
+  'web:browser': { command: 'pnpm', args: ['exec', 'playwright', 'install', 'chromium'], deps: ['install'] },
+  'web:test': { command: 'pnpm', args: ['test:web'], deps: ['install', 'web:deps', 'web:browser'] },
   'vscode:test': {
     command: 'xvfb-run',
     args: ['-a', '--server-args=-screen 0 1920x1080x24', 'pnpm', 'test:vscode'],
+    deps: ['install', 'web:deps', 'web:browser'],
   },
 };
 
@@ -501,17 +502,44 @@ export function buildActArgs(options) {
   return args;
 }
 
-function resolvePreset(name) {
+function getPreset(name) {
   const preset = PRESETS[name];
   if (!preset) {
     fail(`Unknown preset: ${name}`);
   }
 
-  return preset;
+  return { name, command: preset.command, args: [...preset.args], deps: [...preset.deps] };
 }
 
-function formatPresetCommand(preset) {
-  return formatCommand(preset.command, preset.args);
+export function buildPresetGraph(stepNames) {
+  const requested = new Set();
+  const nodesByName = new Map();
+  const order = [];
+
+  function visit(name) {
+    if (nodesByName.has(name)) {
+      return;
+    }
+
+    const preset = getPreset(name);
+    for (const dep of preset.deps) {
+      visit(dep);
+    }
+
+    nodesByName.set(name, preset);
+    order.push(preset);
+  }
+
+  for (const name of stepNames) {
+    if (requested.has(name)) {
+      fail(`Duplicate preset in batch: ${name}`);
+    }
+
+    requested.add(name);
+    visit(name);
+  }
+
+  return { nodes: order, order, byName: nodesByName };
 }
 
 async function runCommand(command, args, env) {
@@ -541,8 +569,9 @@ function printJobBatchDryRun(jobNames, concurrency) {
 }
 
 async function runPresetSteps(stepNames, { dryRun, verbose, env }) {
-  const resolved = stepNames.map((name) => ({ name, ...resolvePreset(name) }));
-  const commandList = resolved.map((step) => formatPresetCommand(step));
+  const graph = buildPresetGraph(stepNames);
+  const resolved = graph.order;
+  const commandList = resolved.map((step) => formatCommand(step.command, step.args));
 
   if (dryRun) {
     console.log('Resolved preset commands:');
