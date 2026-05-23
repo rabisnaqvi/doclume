@@ -110,10 +110,11 @@ export async function renderMermaidDiagrams(
     }
 
     inFlight.add(node);
+    let renderId: string | null = null;
     try {
       const mermaid = await ensureConfigured();
       if (aborted()) return 'aborted';
-      const renderId = `mermaid-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      renderId = `mermaid-${Date.now()}-${Math.random().toString(16).slice(2)}`;
       const { svg } = await mermaid.render(renderId, code);
       if (aborted()) return 'aborted';
       node.innerHTML = sanitizeMermaidSvg(svg);
@@ -125,6 +126,9 @@ export async function renderMermaidDiagrams(
       observer?.unobserve(node);
       return 'failed';
     } finally {
+      if (renderId) {
+        document.getElementById(`d${renderId}`)?.remove();
+      }
       inFlight.delete(node);
     }
   };

@@ -65,6 +65,38 @@ describe('renderMermaidDiagrams', () => {
     expect(node.innerHTML).toContain('<svg');
   });
 
+  it('removes Mermaid temp nodes after rendering', async () => {
+    document.body.innerHTML = `
+      <div id="root">
+        <div class="mermaid" data-src="flowchart TD\nA-->B"></div>
+      </div>
+    `;
+
+    const root = document.getElementById('root');
+    const node = root?.querySelector('.mermaid') as HTMLElement;
+    vi.spyOn(node, 'getBoundingClientRect').mockReturnValue({
+      x: 0, y: 0, top: 0, left: 0, right: 10, bottom: 10,
+      width: 10, height: 10, toJSON() {},
+    });
+
+    mermaidModule.render.mockImplementationOnce(async (id: string, code: string) => {
+      const temp = document.createElement('div');
+      temp.id = `d${id}`;
+      temp.dataset.code = code;
+      document.body.appendChild(temp);
+      return {
+        svg: `<svg xmlns="http://www.w3.org/2000/svg"><text>${code}</text></svg>`,
+      };
+    });
+
+    await renderMermaidDiagrams(root, 'manual', { runtime: mermaidModule });
+
+    const [renderId] = mermaidModule.render.mock.calls[0] ?? [];
+    expect(renderId).toBeTypeOf('string');
+    expect(node.innerHTML).toContain('<svg');
+    expect(document.getElementById(`d${renderId}`)).toBeNull();
+  });
+
   it('waits for intersection before rendering hidden nodes', async () => {
     document.body.innerHTML = `
       <div id="root">
