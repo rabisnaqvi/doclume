@@ -27,17 +27,32 @@ test('keeps code block controls pinned while scrolling horizontally', async ({ p
 
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: async () => undefined },
+    });
+  });
 
   const article = page.locator('article.markdown');
   const codeBlock = article.locator('pre').first();
   const copyButton = article.locator('button.code-block__copy').first();
   const overlay = codeBlock.locator('.code-block__overlay').first();
+  const copyIcon = codeBlock.locator('.code-block__copy-icon').first();
+  const languageLabel = codeBlock.locator('.code-block__label').first();
   const scroll = codeBlock.locator('.code-block__scroll').first();
 
-  await expect(overlay).toHaveCSS('opacity', '0');
-  await codeBlock.hover();
-  await expect(overlay).toHaveCSS('opacity', '1');
-  await expect(copyButton).toBeVisible();
+  await expect(overlay).toBeVisible();
+  await expect(copyIcon).toBeVisible();
+  await expect(copyButton).toHaveText('Copy');
+  await expect(languageLabel).toHaveText('typescript');
+
+  const overlayBox = await overlay.boundingBox();
+  const scrollBox = await scroll.boundingBox();
+  expect(overlayBox).not.toBeNull();
+  expect(scrollBox).not.toBeNull();
+  expect(Math.abs((overlayBox?.x ?? 0) - (scrollBox?.x ?? 0))).toBeLessThan(4);
+  expect((overlayBox?.y ?? 0)).toBeLessThan((scrollBox?.y ?? 0));
 
   const before = await copyButton.boundingBox();
 
@@ -49,6 +64,9 @@ test('keeps code block controls pinned while scrolling horizontally', async ({ p
   const after = await copyButton.boundingBox();
   await expect(copyButton).toBeVisible();
   expect(Math.abs((after?.x ?? 0) - (before?.x ?? 0))).toBeLessThan(5);
+
+  await copyButton.click();
+  await expect(copyButton).toHaveText('Copied ✓');
 });
 
 test('renders Mermaid on first open', async ({ page }) => {
@@ -79,12 +97,13 @@ test('renders the viewer content', async ({ page }) => {
   await expect(article.locator('ul')).toBeVisible();
   const codeBlock = article.locator('pre').first();
   const overlay = codeBlock.locator('.code-block__overlay').first();
+  const copyButton = article.locator('button.code-block__copy').first();
+  const copyIcon = codeBlock.locator('.code-block__copy-icon').first();
 
-  await expect(overlay).toHaveCSS('opacity', '0');
+  await expect(overlay).toBeVisible();
+  await expect(copyIcon).toBeVisible();
   await expect(article.locator('.code-block__label')).toHaveText('typescript');
-  await codeBlock.hover();
-  await expect(overlay).toHaveCSS('opacity', '1');
+  await expect(copyButton).toHaveText('Copy');
   await expect(codeBlock).toHaveScreenshot('viewer-code-block.png', { maxDiffPixelRatio: 0.02 });
-  await page.mouse.move(0, 0);
   await expect(page).toHaveScreenshot('viewer-content.png', { fullPage: true, maxDiffPixelRatio: 0.02 });
 });

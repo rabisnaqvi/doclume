@@ -247,24 +247,13 @@
   line-height: 1.62;
 }
 
-.markdown pre.code-block--enhanced {
-  padding-top: 2.9rem;
-}
-
 .markdown .code-block__overlay {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.9rem;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 120ms ease;
-}
-
-.markdown pre:hover .code-block__overlay,
-.markdown pre:focus-within .code-block__overlay {
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  margin-bottom: 0.75rem;
   opacity: 1;
   pointer-events: auto;
 }
@@ -277,32 +266,47 @@
 }
 
 .markdown .code-block__label {
-  color: var(--text);
-  text-transform: lowercase;
-  letter-spacing: 0.06em;
-  padding: 0.28rem 0.5rem;
-  border-radius: 999px;
-  border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
-  background: color-mix(in oklab, var(--surface) 88%, transparent);
-  box-shadow: 0 2px 10px color-mix(in oklab, black 12%, transparent);
-  text-shadow: 0 1px 1px color-mix(in oklab, var(--bg) 40%, transparent);
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: normal;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  text-shadow: none;
 }
 
 .markdown .code-block__copy {
-  border: 1px solid var(--border-soft);
-  background: color-mix(in oklab, var(--surface) 92%, transparent);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--text-soft);
-  border-radius: 999px;
-  padding: 0.38rem 0.7rem;
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+  white-space: nowrap;
+  transition: color 120ms ease;
+}
+
+.markdown .code-block__copy-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  flex: none;
+  color: currentColor;
+}
+
+.markdown .code-block__copy-icon::before {
+  content: '⧉';
+  font-size: 0.95rem;
+  line-height: 1;
 }
 
 .markdown .code-block__copy:hover,
 .markdown .code-block__copy:focus-visible {
-  border-color: var(--accent);
   color: var(--text);
-  background: color-mix(in oklab, var(--accent) 12%, var(--surface));
 }
 
 .markdown .code-block__copy:focus-visible {
@@ -491,11 +495,6 @@ html[data-theme='lamplight'] .markdown pre {
   font-size: 0.85em;
 }
 
-html[data-theme='library'] .markdown pre.code-block--enhanced,
-html[data-theme='lamplight'] .markdown pre.code-block--enhanced {
-  padding-top: 2.4rem;
-}
-
 html[data-theme='library'] .markdown :not(pre):not(.code-block__scroll) > code,
 html[data-theme='lamplight'] .markdown :not(pre):not(.code-block__scroll) > code {
   background: transparent;
@@ -616,13 +615,12 @@ html[data-theme='console'] .markdown .code-block__label {
 
 html[data-theme='manual'] .markdown .code-block__copy,
 html[data-theme='console'] .markdown .code-block__copy {
-  background: color-mix(in oklab, var(--surface) 94%, transparent);
-  border-color: var(--border);
+  color: var(--text-soft);
 }
 
 html[data-theme='console'] .markdown .code-block__copy:hover,
 html[data-theme='console'] .markdown .code-block__copy:focus-visible {
-  background: color-mix(in oklab, var(--accent) 16%, var(--surface));
+  color: var(--text);
 }
 
 html[data-theme='manual'] .markdown pre code,
@@ -1117,6 +1115,7 @@ html[data-theme='contrast'] .markdown .code-block__copy {
   border-radius: 0;
   background: var(--surface);
   color: var(--text);
+  padding: 0.14rem 0.45rem;
 }
 
 html[data-theme='contrast'] .markdown .code-block__copy:hover,
@@ -1190,22 +1189,6 @@ html[data-theme='contrast'] .markdown .mermaid {
   border-radius: 0;
 }
 
-@media (hover: none), (pointer: coarse) {
-  .markdown pre.code-block--enhanced {
-    padding-top: 1rem;
-  }
-
-  .markdown .code-block__overlay {
-    position: static;
-    display: flex;
-    width: 100%;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    margin-bottom: 0.75rem;
-    opacity: 1;
-    pointer-events: auto;
-  }
-}
 
 /* Search highlights */
 .markdown mark[data-search-hit] {

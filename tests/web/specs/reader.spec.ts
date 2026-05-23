@@ -16,11 +16,23 @@ test('keeps code block controls pinned while scrolling horizontally', async ({ p
 
   const reader = page.locator('main.reader');
   const codeBlock = reader.locator('article.markdown pre').first();
+  const overlay = codeBlock.locator('.code-block__overlay');
   const copyButton = codeBlock.locator('button.code-block__copy');
+  const copyIcon = codeBlock.locator('.code-block__copy-icon');
+  const languageLabel = codeBlock.locator('.code-block__label');
   const scroll = codeBlock.locator('.code-block__scroll').first();
 
-  await codeBlock.hover();
-  await expect(copyButton).toBeVisible();
+  await expect(overlay).toBeVisible();
+  await expect(copyIcon).toBeVisible();
+  await expect(languageLabel).toHaveText('typescript');
+  await expect(copyButton).toHaveText('Copy');
+
+  const overlayBox = await overlay.boundingBox();
+  const scrollBox = await scroll.boundingBox();
+  expect(overlayBox).not.toBeNull();
+  expect(scrollBox).not.toBeNull();
+  expect(Math.abs((overlayBox?.x ?? 0) - (scrollBox?.x ?? 0))).toBeLessThan(4);
+  expect((overlayBox?.y ?? 0)).toBeLessThan((scrollBox?.y ?? 0));
 
   const before = await copyButton.boundingBox();
 
@@ -48,9 +60,15 @@ test.describe('mobile code blocks', () => {
 
     const codeBlock = page.locator('article.markdown pre').first();
     const overlay = codeBlock.locator('.code-block__overlay');
+    const copyButton = codeBlock.locator('button.code-block__copy');
+    const copyIcon = codeBlock.locator('.code-block__copy-icon');
+    const languageLabel = codeBlock.locator('.code-block__label');
     const scroll = codeBlock.locator('.code-block__scroll').first();
 
     await expect(overlay).toBeVisible();
+    await expect(copyIcon).toBeVisible();
+    await expect(copyButton).toHaveText('Copy');
+    await expect(languageLabel).toHaveText('typescript');
 
     const overlayBox = await overlay.boundingBox();
     const scrollBox = await scroll.boundingBox();
@@ -58,7 +76,7 @@ test.describe('mobile code blocks', () => {
     expect(overlayBox).not.toBeNull();
     expect(scrollBox).not.toBeNull();
     expect(Math.abs((overlayBox?.x ?? 0) - (scrollBox?.x ?? 0))).toBeLessThan(4);
-    expect(overlayBox?.width ?? 0).toBeGreaterThan((scrollBox?.width ?? 0) * 0.8);
+    expect((overlayBox?.y ?? 0)).toBeLessThan((scrollBox?.y ?? 0));
   });
 });
 
@@ -94,7 +112,11 @@ test('loads the sample document', async ({ page }) => {
 
   await expect(reader.locator('.reader__filename')).toHaveText('sample.md');
   await expect(reader.locator('article.markdown')).toBeVisible();
-  await firstCodeBlock.hover();
+  const overlay = firstCodeBlock.locator('.code-block__overlay');
+  const copyIcon = firstCodeBlock.locator('.code-block__copy-icon');
+
+  await expect(overlay).toBeVisible();
+  await expect(copyIcon).toBeVisible();
   await expect(copyButton).toBeVisible();
   await expect(languageLabel).toHaveText('typescript');
 
