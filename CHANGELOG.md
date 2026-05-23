@@ -10,7 +10,6 @@ Monorepo releases use one version across the repo root, `@doclume/core`, `@doclu
 ## [Unreleased]
 
 ### Added
-- Local CI runner — `pnpm ci:local` wraps `act` for workflow jobs and also runs ordered local step presets, with Podman socket detection and cleanup-friendly defaults.
 - Admonition blocks — GitHub-style `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, and `[!CAUTION]` blockquotes now render as styled callouts with icons, themed per each of the five themes.
 - Code block copy button and language label — code blocks now show an always-visible header on desktop and touch devices, with the language label on the left and a copy control on the right. Syntax-highlighted blocks now scroll horizontally without showing a scrollbar.
 

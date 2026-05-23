@@ -5,6 +5,7 @@
   "scripts": {
     "gen-icons": "node scripts/gen-icons.mjs",
     "bump": "node scripts/bump-version.mjs",
+    "ci:local": "node scripts/run-ci-local.mjs",
     "dev": "pnpm --filter @doclume/web dev",
     "build": "pnpm --filter @doclume/core build && pnpm --filter @doclume/web build && pnpm --filter doclume build",
     "build:core": "pnpm --filter @doclume/core build",

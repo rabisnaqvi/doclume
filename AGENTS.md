@@ -25,7 +25,8 @@ Keep `caveman` and `using-superpowers` active by default.
 - If shared rendering changes, update core first.
 
 ## Change hygiene
-- Add user-visible changes to `CHANGELOG.md` under `## [Unreleased]`.
+- Add user-visible or shipped changes to `CHANGELOG.md` under `## [Unreleased]`.
+- Development-only / internal tooling changes do not need a changelog entry unless the user explicitly asks for one.
 - Do not commit `docs/superpowers/specs/*` or `docs/superpowers/plans/*` unless the user explicitly approves committing them; keep design/spec/plan docs out of git history by default.
 - Keep changes small and focused.
 - Do not reshuffle packages unless the task requires it.

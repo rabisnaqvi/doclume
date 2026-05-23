@@ -55,14 +55,22 @@ export async function renderMermaidDiagrams(
   let observer: IntersectionObserver | null = null;
   let resizeObserver: ResizeObserver | null = null;
   let runtimePromise: Promise<MermaidRuntime> | null = null;
+  let configuredPromise: Promise<MermaidRuntime> | null = null;
   let runtime: MermaidRuntime | null = null;
   let initialized = false;
   let cleanedUp = false;
+  let recheckHandle: number | undefined;
+  const recheckQueue = new Set<HTMLElement>();
 
   const cleanup = (): void => {
     if (cleanedUp) return;
     cleanedUp = true;
-    document.removeEventListener('visibilitychange', recheckPending);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    if (recheckHandle !== undefined) {
+      window.cancelAnimationFrame(recheckHandle);
+      recheckHandle = undefined;
+    }
+    recheckQueue.clear();
     observer?.disconnect();
     resizeObserver?.disconnect();
   };
@@ -83,18 +91,27 @@ export async function renderMermaidDiagrams(
   };
 
   const ensureConfigured = async (): Promise<MermaidRuntime> => {
-    const mermaid = await ensureRuntime();
-    if (!initialized) {
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: getMermaidTheme(theme),
-        securityLevel: 'strict',
-        htmlLabels: false,
+    if (runtime && initialized) return runtime;
+    if (!configuredPromise) {
+      configuredPromise = (async () => {
+        const mermaid = await ensureRuntime();
+        if (!initialized) {
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: getMermaidTheme(theme),
+            securityLevel: 'strict',
+            htmlLabels: false,
+          });
+          await ensureMermaidBootstrap(mermaid);
+          initialized = true;
+        }
+        return mermaid;
+      })().catch((error) => {
+        configuredPromise = null;
+        throw error;
       });
-      await ensureMermaidBootstrap(mermaid);
-      initialized = true;
     }
-    return mermaid;
+    return configuredPromise;
   };
 
   const renderOne = async (node: HTMLElement): Promise<'rendered' | 'deferred' | 'failed' | 'aborted'> => {
@@ -106,6 +123,7 @@ export async function renderMermaidDiagrams(
     if (!code.trim()) {
       pending.delete(node);
       observer?.unobserve(node);
+      resizeObserver?.unobserve(node);
       return 'failed';
     }
 
@@ -120,10 +138,12 @@ export async function renderMermaidDiagrams(
       node.innerHTML = sanitizeMermaidSvg(svg);
       pending.delete(node);
       observer?.unobserve(node);
+      resizeObserver?.unobserve(node);
       return 'rendered';
     } catch {
       pending.delete(node);
       observer?.unobserve(node);
+      resizeObserver?.unobserve(node);
       return 'failed';
     } finally {
       if (renderId) {
@@ -133,9 +153,28 @@ export async function renderMermaidDiagrams(
     }
   };
 
-  const recheckPending = (): void => {
-    void Promise.all(Array.from(pending).map((node) => renderOne(node))).then(() => {
-      if (!pending.size) cleanup();
+  const handleVisibilityChange = (): void => {
+    recheckPending();
+  };
+
+  const handleResize = (entries: ResizeObserverEntry[]): void => {
+    recheckPending(entries.map((entry) => entry.target as HTMLElement));
+  };
+
+  const recheckPending = (candidates: Iterable<HTMLElement> = pending): void => {
+    if (cleanedUp || !pending.size) return;
+    for (const node of candidates) {
+      recheckQueue.add(node);
+    }
+    if (recheckHandle !== undefined) return;
+    recheckHandle = window.requestAnimationFrame(() => {
+      recheckHandle = undefined;
+      const queued = Array.from(recheckQueue);
+      recheckQueue.clear();
+      const visible = queued.filter((node) => pending.has(node) && isRenderable(node));
+      void Promise.all(visible.map(renderOne)).then(() => {
+        if (!pending.size) cleanup();
+      });
     });
   };
 
@@ -152,17 +191,21 @@ export async function renderMermaidDiagrams(
     });
   }
 
-  const resizeTarget = root instanceof Element ? root : document.documentElement;
   if (typeof ResizeObserver === 'function') {
-    resizeObserver = new ResizeObserver(recheckPending);
-    resizeObserver.observe(resizeTarget);
+    resizeObserver = new ResizeObserver(handleResize);
+    for (const node of nodes) {
+      resizeObserver.observe(node);
+    }
   }
 
-  document.addEventListener('visibilitychange', recheckPending);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
   options?.signal?.addEventListener('abort', cleanup, { once: true });
 
-  for (const node of nodes) {
-    const result = await renderOne(node);
+  const initialResults = await Promise.all(nodes.map(async (node) => ({
+    node,
+    result: await renderOne(node),
+  })));
+  for (const { node, result } of initialResults) {
     if (result === 'deferred') observer?.observe(node);
   }
 

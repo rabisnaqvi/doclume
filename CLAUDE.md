@@ -24,6 +24,7 @@ pnpm test:update-snapshots  # regenerate all Playwright screenshot baselines
 
 pnpm typecheck              # tsc --build across all packages + tests/tsconfig.json
 pnpm bump                   # bump version across all packages via scripts/bump-version.mjs
+pnpm ci:local               # run the CI workflow locally with act or preset steps
 ```
 
 Install Playwright browsers once if missing:
