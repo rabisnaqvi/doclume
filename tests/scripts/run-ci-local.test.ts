@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildActArgs, buildPresetGraph, parseArgs } from '../../scripts/run-ci-local.mjs';
+import { buildActArgs, buildPresetGraph, parseArgs, scheduleNodes } from '../../scripts/run-ci-local.mjs';
 
 describe('run-ci-local CLI parsing', () => {
   it('accepts repeated jobs and concurrency', () => {
@@ -46,6 +46,70 @@ describe('run-ci-local CLI parsing', () => {
 
   it('rejects unknown presets', () => {
     expect(() => buildPresetGraph(['unknown'])).toThrow(/unknown preset/i);
+  });
+
+  it('runs independent nodes in parallel up to concurrency', async () => {
+    const started: string[] = [];
+    let running = 0;
+    let maxRunning = 0;
+    const gates = new Map<string, () => void>();
+
+    const execute = async (node: { name: string }) => {
+      started.push(node.name);
+      running += 1;
+      maxRunning = Math.max(maxRunning, running);
+
+      await new Promise<void>((resolve) => {
+        gates.set(node.name, resolve);
+      });
+
+      running -= 1;
+      return 0;
+    };
+
+    const run = scheduleNodes([
+      { name: 'install', deps: [] },
+      { name: 'core:test', deps: ['install'] },
+      { name: 'web:deps', deps: ['install'] },
+    ], {
+      concurrency: 2,
+      execute,
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(started).toEqual(['install']);
+
+    gates.get('install')!();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(started).toEqual(['install', 'core:test', 'web:deps']);
+    expect(maxRunning).toBe(2);
+
+    gates.get('core:test')!();
+    gates.get('web:deps')!();
+
+    const summary = await run;
+    expect(summary.failed).toEqual([]);
+    expect(summary.skipped).toEqual([]);
+    expect(summary.succeeded.sort()).toEqual(['core:test', 'install', 'web:deps']);
+  });
+
+  it('stops queueing new nodes after the first failure', async () => {
+    const started: string[] = [];
+    const summary = await scheduleNodes([
+      { name: 'install', deps: [] },
+      { name: 'typecheck', deps: ['install'] },
+      { name: 'core:test', deps: ['install'] },
+    ], {
+      concurrency: 1,
+      execute: async (node: { name: string }) => {
+        started.push(node.name);
+        return node.name === 'typecheck' ? 1 : 0;
+      },
+    });
+
+    expect(started).toEqual(['install', 'typecheck']);
+    expect(summary.failed).toEqual(['typecheck']);
+    expect(summary.skipped).toEqual(['core:test']);
   });
 
   it('keeps single-job act behavior', () => {

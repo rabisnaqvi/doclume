@@ -560,40 +560,185 @@ async function runAct(args, env) {
   return runCommand('act', args, env);
 }
 
-function printJobBatchDryRun(jobNames, concurrency) {
-  console.log('Resolved job batch:');
-  console.log(`  concurrency: ${concurrency}`);
-  for (const [index, jobName] of jobNames.entries()) {
-    console.log(`  ${index + 1}. ${jobName}`);
+function writePrefixedLines(label, text, writer) {
+  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  for (const line of normalized.split('\n')) {
+    if (!line) {
+      continue;
+    }
+
+    writer(`[${label}] ${line}`);
   }
 }
 
-async function runPresetSteps(stepNames, { dryRun, verbose, env }) {
+async function runPrefixedCommand(label, command, args, env, verbose = false) {
+  const resolvedCommand = formatCommand(command, args);
+  if (verbose) {
+    console.error(`[${label}] running ${resolvedCommand}`);
+  }
+
+  const result = await waitForChild(command, args, {
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env,
+    captureOutput: true,
+  });
+
+  if (result.stdout) {
+    writePrefixedLines(label, result.stdout, console.log);
+  }
+
+  if (result.stderr) {
+    writePrefixedLines(label, result.stderr, console.error);
+  }
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (result.signal) {
+    return signalExitCode(result.signal);
+  }
+
+  return result.code ?? 0;
+}
+
+export async function scheduleNodes(nodes, { concurrency = 1, execute }) {
+  if (!Number.isInteger(concurrency) || concurrency < 1) {
+    fail('--concurrency requires a positive integer');
+  }
+
+  const states = new Map(nodes.map((node) => [node.name, 'pending']));
+  const started = [];
+  const succeeded = [];
+  const failed = [];
+  const skipped = [];
+  const running = new Map();
+  let stopScheduling = false;
+  let exitCode = 0;
+
+  for (const node of nodes) {
+    for (const dep of node.deps) {
+      if (!states.has(dep)) {
+        fail(`Unknown dependency: ${dep}`);
+      }
+    }
+  }
+
+  const canRun = (node) => node.deps.every((dep) => states.get(dep) === 'succeeded');
+
+  const launch = (node) => {
+    states.set(node.name, 'running');
+    started.push(node.name);
+
+    const promise = Promise.resolve()
+      .then(() => execute(node))
+      .then(
+        (result) => ({ node, code: typeof result === 'number' ? result : Number(result ?? 0), error: null }),
+        (error) => ({ node, code: 1, error }),
+      );
+
+    running.set(node.name, promise);
+  };
+
+  while (true) {
+    while (!stopScheduling && running.size < concurrency) {
+      const next = nodes.find((node) => states.get(node.name) === 'pending' && canRun(node));
+      if (!next) {
+        break;
+      }
+
+      launch(next);
+    }
+
+    if (running.size === 0) {
+      break;
+    }
+
+    const settled = await Promise.race(running.values());
+    running.delete(settled.node.name);
+    if (settled.error || settled.code !== 0) {
+      states.set(settled.node.name, 'failed');
+      failed.push(settled.node.name);
+      exitCode ||= settled.code || 1;
+      stopScheduling = true;
+      continue;
+    }
+
+    states.set(settled.node.name, 'succeeded');
+    succeeded.push(settled.node.name);
+  }
+
+  for (const node of nodes) {
+    if (states.get(node.name) === 'pending') {
+      states.set(node.name, 'skipped');
+      skipped.push(node.name);
+    }
+  }
+
+  return { started, succeeded, failed, skipped, exitCode };
+}
+
+function buildJobNodes(jobNames, baseOptions) {
+  const requested = new Set();
+  return jobNames.map((jobName) => {
+    if (requested.has(jobName)) {
+      fail(`Duplicate job in batch: ${jobName}`);
+    }
+
+    requested.add(jobName);
+    return {
+      name: jobName,
+      command: 'act',
+      args: buildActArgs({ ...baseOptions, job: jobName }),
+      deps: [],
+    };
+  });
+}
+
+function printJobBatchDryRun(jobNodes, concurrency) {
+  console.log('Resolved job batch:');
+  console.log(`  concurrency: ${concurrency}`);
+  for (const [index, jobNode] of jobNodes.entries()) {
+    console.log(`  ${index + 1}. ${jobNode.name}: ${formatCommand(jobNode.command, jobNode.args)}`);
+  }
+}
+
+async function runPresetSteps(stepNames, { concurrency, dryRun, verbose, env }) {
   const graph = buildPresetGraph(stepNames);
   const resolved = graph.order;
   const commandList = resolved.map((step) => formatCommand(step.command, step.args));
 
   if (dryRun) {
     console.log('Resolved preset commands:');
+    console.log(`  concurrency: ${concurrency}`);
     for (const [index, step] of resolved.entries()) {
       console.log(`  ${index + 1}. ${step.name}: ${commandList[index]}`);
     }
     return 0;
   }
 
-  for (const [index, step] of resolved.entries()) {
-    const resolvedCommand = commandList[index];
-    if (verbose) {
-      console.error(`Verbose: running ${step.name}: ${resolvedCommand}`);
-    }
+  const summary = await scheduleNodes(resolved, {
+    concurrency,
+    execute: (node) => runPrefixedCommand(node.name, node.command, node.args, env, verbose),
+  });
 
-    const exitCode = await runCommand(step.command, step.args, env);
-    if (exitCode !== 0) {
-      return exitCode;
-    }
-  }
+  return summary.exitCode;
+}
 
-  return 0;
+async function runJobBatch(jobNames, { concurrency, verbose, env, workflow, keepContainer, reuse, containerArchitecture }) {
+  const jobNodes = buildJobNodes(jobNames, {
+    workflow,
+    keepContainer,
+    reuse,
+    containerArchitecture,
+  });
+
+  const summary = await scheduleNodes(jobNodes, {
+    concurrency,
+    execute: (node) => runPrefixedCommand(node.name, node.command, node.args, env, verbose),
+  });
+
+  return summary.exitCode;
 }
 
 async function main() {
@@ -604,17 +749,19 @@ async function main() {
     return 0;
   }
 
-  if (options.job && options.steps.length > 0) {
+  if (options.jobs.length > 0 && options.steps.length > 0) {
     fail('--job and --step are mutually exclusive');
   }
 
-  if (!options.job && options.steps.length === 0) {
+  if (options.jobs.length === 0 && options.steps.length === 0) {
     fail('Specify either --job <name> or one or more --step <name> flags');
   }
 
+  const env = { ...process.env };
+
   if (options.steps.length > 0) {
-    const env = { ...process.env };
     return runPresetSteps(options.steps, {
+      concurrency: options.concurrency,
       dryRun: options.dryRun,
       verbose: options.verbose,
       env,
@@ -622,10 +769,31 @@ async function main() {
   }
 
   const dockerHost = await resolveDockerHost(options.verbose);
-  const env = { ...process.env };
-
   if (dockerHost) {
     env.DOCKER_HOST = dockerHost;
+  }
+
+  if (options.jobs.length > 1) {
+    if (options.dryRun) {
+      console.log(`Resolved DOCKER_HOST: ${dockerHost ?? '<unset>'}`);
+      printJobBatchDryRun(buildJobNodes(options.jobs, {
+        workflow: options.workflow,
+        keepContainer: options.keepContainer,
+        reuse: options.reuse,
+        containerArchitecture: options.containerArchitecture,
+      }), options.concurrency);
+      return 0;
+    }
+
+    return runJobBatch(options.jobs, {
+      concurrency: options.concurrency,
+      verbose: options.verbose,
+      env,
+      workflow: options.workflow,
+      keepContainer: options.keepContainer,
+      reuse: options.reuse,
+      containerArchitecture: options.containerArchitecture,
+    });
   }
 
   const actArgs = buildActArgs(options);
@@ -634,12 +802,6 @@ async function main() {
     : formatCommand('act', actArgs);
 
   if (options.dryRun) {
-    if (options.jobs.length > 1) {
-      console.log(`Resolved DOCKER_HOST: ${dockerHost ?? '<unset>'}`);
-      printJobBatchDryRun(options.jobs, options.concurrency);
-      return 0;
-    }
-
     console.log(`Resolved DOCKER_HOST: ${dockerHost ?? '<unset>'}`);
     console.log(`Resolved command: ${resolvedCommand}`);
     return 0;
