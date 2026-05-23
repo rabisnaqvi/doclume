@@ -28,7 +28,7 @@ describe('enhanceCodeBlocks', () => {
     expect(dom.window.document.querySelector('.code-block__label')?.textContent).toBe('typescript');
     expect(dom.window.document.querySelectorAll('.code-block__label')).toHaveLength(1);
     expect(dom.window.document.querySelectorAll('button.code-block__copy')).toHaveLength(2);
-    expect(firstButton?.querySelector('.code-block__copy-icon')?.textContent).toBe('⧉');
+    expect(firstButton?.querySelector('.code-block__copy-icon')).not.toBeNull();
     expect(firstButton?.querySelector('.code-block__copy-label')?.textContent).toBe('Copy');
   });
 

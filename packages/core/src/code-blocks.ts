@@ -119,7 +119,6 @@ export function enhanceCodeBlocks(root: ParentNode | null | undefined): void {
     const icon = pre.ownerDocument.createElement('span');
     icon.className = 'code-block__copy-icon';
     icon.setAttribute('aria-hidden', 'true');
-    icon.textContent = '⧉';
 
     const label = pre.ownerDocument.createElement('span');
     label.className = 'code-block__copy-label';
