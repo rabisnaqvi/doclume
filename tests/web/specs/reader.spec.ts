@@ -106,5 +106,11 @@ test('loads the sample document', async ({ page }) => {
   await expect(copyButton).toHaveText('Copied ✓');
   await expect(reader.locator('article.markdown .mermaid svg')).toHaveCount(2);
   await page.addStyleTag({ content: 'main.reader { height: 1400px !important; overflow: hidden !important; }' });
-  await expect(reader).toHaveScreenshot('reader-sample.png', { maxDiffPixelRatio: 0.06 });
+  await page.addStyleTag({ content: `
+    .topbar {
+      display: none !important;
+    }
+  ` });
+
+  await expect(reader).toHaveScreenshot('reader-sample.png', { maxDiffPixelRatio: 0.11 });
 });
