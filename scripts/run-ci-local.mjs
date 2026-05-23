@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from 'node:child_process';
 import { constants as osConstants } from 'node:os';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const DEFAULT_WORKFLOW = '.github/workflows/testing.yml';
 const TERMINATION_SIGNALS = process.platform === 'win32'
@@ -27,39 +29,51 @@ function usage() {
 
   return `Usage:
   node scripts/run-ci-local.mjs --help
-  node scripts/run-ci-local.mjs --job <name> [--workflow <path>] [--container-architecture <arch>] [--keep-container] [--dry-run] [--verbose]
-  node scripts/run-ci-local.mjs --step <name> [--step <name> ...] [--dry-run] [--verbose]
+  node scripts/run-ci-local.mjs --job <name> [--job <name> ...] [--workflow <path>] [--container-architecture <arch>] [--keep-container] [--fresh] [--concurrency <n>] [--dry-run] [--verbose]
+  node scripts/run-ci-local.mjs --step <name> [--step <name> ...] [--concurrency <n>] [--dry-run] [--verbose]
 
 Modes:
   Workflow/job mode runs a GitHub Actions job with act.
-    - --job <name> selects the workflow job
+    - --job <name> selects workflow jobs (repeatable)
     - --workflow defaults to ${DEFAULT_WORKFLOW}
+    - job runs reuse act containers by default; pass --fresh for a clean container
     - --container-architecture passes an architecture through to act
     - --keep-container leaves the container behind for inspection
+    - --concurrency <n> runs independent jobs/steps in parallel (default: 1)
 
   Preset/step mode runs local CI presets in the order provided.
     - --step <name> is repeatable and preserves order
     - at least one --step is required in this mode
+    - job batches and step batches remain mutually exclusive
 
 Presets:
 ${presetLines}
 
 Options:
   --help, -h                 Show this help and exit 0
-  --job <name>               Run the named workflow job via act
+  --job <name>               Run workflow jobs via act (repeatable)
   --step <name>              Run a local preset step (repeatable)
   --workflow <path>          Workflow file for job mode (default: ${DEFAULT_WORKFLOW})
   --container-architecture   Container architecture to pass to act (default: act's default)
   --keep-container           Keep the container after the run (default: off)
+  --fresh                    Run the job in a clean container (default: reuse)
+  --concurrency <n>          Run independent jobs/steps in parallel (default: 1)
   --dry-run                  Print the resolved command without running it (default: off)
   --verbose                  Print extra diagnostic information (default: off)
 `;
 }
 
+class CliError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'CliError';
+  }
+}
+
 function fail(message) {
   console.error(`Error: ${message}\n`);
   console.error(usage());
-  process.exit(1);
+  throw new CliError(message);
 }
 
 function readValue(argv, index, flag) {
@@ -70,14 +84,25 @@ function readValue(argv, index, flag) {
   return value;
 }
 
-function parseArgs(argv) {
+function parsePositiveInteger(value, flag) {
+  if (!/^[1-9]\d*$/.test(value)) {
+    fail(`${flag} requires a positive integer`);
+  }
+
+  return Number(value);
+}
+
+export function parseArgs(argv) {
   const options = {
     help: false,
     job: null,
+    jobs: [],
     steps: [],
     workflow: DEFAULT_WORKFLOW,
     containerArchitecture: null,
     keepContainer: false,
+    reuse: true,
+    concurrency: 1,
     dryRun: false,
     verbose: false,
   };
@@ -95,6 +120,11 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (arg === '--fresh') {
+      options.reuse = false;
+      continue;
+    }
+
     if (arg === '--dry-run') {
       options.dryRun = true;
       continue;
@@ -105,25 +135,43 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (arg === '--concurrency') {
+      options.concurrency = parsePositiveInteger(readValue(argv, i, '--concurrency'), '--concurrency');
+      i += 1;
+      continue;
+    }
+
+    if (arg.startsWith('--concurrency=')) {
+      options.concurrency = parsePositiveInteger(arg.slice('--concurrency='.length), '--concurrency');
+      continue;
+    }
+
     if (arg === '--job') {
-      options.job = readValue(argv, i, '--job');
+      if (options.steps.length > 0) fail('--job and --step are mutually exclusive');
+      options.jobs.push(readValue(argv, i, '--job'));
+      options.job ??= options.jobs[0];
       i += 1;
       continue;
     }
 
     if (arg.startsWith('--job=')) {
-      options.job = arg.slice('--job='.length);
-      if (!options.job) fail('--job requires a value');
+      if (options.steps.length > 0) fail('--job and --step are mutually exclusive');
+      const value = arg.slice('--job='.length);
+      if (!value) fail('--job requires a value');
+      options.jobs.push(value);
+      options.job ??= options.jobs[0];
       continue;
     }
 
     if (arg === '--step') {
+      if (options.jobs.length > 0) fail('--job and --step are mutually exclusive');
       options.steps.push(readValue(argv, i, '--step'));
       i += 1;
       continue;
     }
 
     if (arg.startsWith('--step=')) {
+      if (options.jobs.length > 0) fail('--job and --step are mutually exclusive');
       const value = arg.slice('--step='.length);
       if (!value) fail('--step requires a value');
       options.steps.push(value);
@@ -435,8 +483,12 @@ async function resolveDockerHost(verbose) {
   return null;
 }
 
-function buildActArgs(options) {
+export function buildActArgs(options) {
   const args = ['-W', options.workflow, '-j', options.job];
+
+  if (options.reuse) {
+    args.push('--reuse');
+  }
 
   if (!options.keepContainer) {
     args.push('--rm');
@@ -478,6 +530,14 @@ async function runCommand(command, args, env) {
 
 async function runAct(args, env) {
   return runCommand('act', args, env);
+}
+
+function printJobBatchDryRun(jobNames, concurrency) {
+  console.log('Resolved job batch:');
+  console.log(`  concurrency: ${concurrency}`);
+  for (const [index, jobName] of jobNames.entries()) {
+    console.log(`  ${index + 1}. ${jobName}`);
+  }
 }
 
 async function runPresetSteps(stepNames, { dryRun, verbose, env }) {
@@ -545,6 +605,12 @@ async function main() {
     : formatCommand('act', actArgs);
 
   if (options.dryRun) {
+    if (options.jobs.length > 1) {
+      console.log(`Resolved DOCKER_HOST: ${dockerHost ?? '<unset>'}`);
+      printJobBatchDryRun(options.jobs, options.concurrency);
+      return 0;
+    }
+
     console.log(`Resolved DOCKER_HOST: ${dockerHost ?? '<unset>'}`);
     console.log(`Resolved command: ${resolvedCommand}`);
     return 0;
@@ -558,21 +624,36 @@ async function main() {
   return runAct(actArgs, env);
 }
 
-main()
-  .then((exitCode) => {
-    process.exit(exitCode);
-  })
-  .catch((error) => {
-    if (error?.signal) {
-      process.exit(signalExitCode(error.signal));
-      return;
-    }
+function isDirectExecution() {
+  if (!process.argv[1]) {
+    return false;
+  }
 
-    if (error?.code === 'ENOENT' && error?.path === 'act') {
-      console.error('Error: act is not installed or not on PATH');
-    } else {
-      console.error(error instanceof Error ? error.stack || error.message : String(error));
-    }
+  return resolve(fileURLToPath(import.meta.url)) === resolve(process.argv[1]);
+}
 
-    process.exit(1);
-  });
+if (isDirectExecution()) {
+  main()
+    .then((exitCode) => {
+      process.exit(exitCode);
+    })
+    .catch((error) => {
+      if (error?.signal) {
+        process.exit(signalExitCode(error.signal));
+        return;
+      }
+
+      if (error instanceof CliError) {
+        process.exit(1);
+        return;
+      }
+
+      if (error?.code === 'ENOENT' && error?.path === 'act') {
+        console.error('Error: act is not installed or not on PATH');
+      } else {
+        console.error(error instanceof Error ? error.stack || error.message : String(error));
+      }
+
+      process.exit(1);
+    });
+}
