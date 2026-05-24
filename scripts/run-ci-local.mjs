@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from 'node:child_process';
 import { constants as osConstants } from 'node:os';
+import { pathToFileURL } from 'node:url';
 
 const DEFAULT_WORKFLOW = '.github/workflows/testing.yml';
 const TERMINATION_SIGNALS = process.platform === 'win32'
@@ -14,15 +15,14 @@ const PRESETS = {
   'web:deps': { command: 'pnpm', args: ['exec', 'playwright', 'install-deps'] },
   'web:browser': { command: 'pnpm', args: ['exec', 'playwright', 'install', 'chromium'] },
   'web:test': { command: 'pnpm', args: ['test:web'] },
-  'vscode:test': {
-    command: 'xvfb-run',
-    args: ['-a', '--server-args=-screen 0 1920x1080x24', 'pnpm', 'test:vscode'],
-  },
 };
 
 function usage() {
-  const presetLines = Object.entries(PRESETS)
-    .map(([name, preset]) => `    - ${name} → ${formatCommand(preset.command, preset.args)}`)
+  const presetLines = Object.keys({ ...PRESETS, 'vscode:test': true })
+    .map((name) => {
+      const preset = resolvePreset(name);
+      return `    - ${name} → ${formatCommand(preset.command, preset.args)}`;
+    })
     .join('\n');
 
   return `Usage:
@@ -455,7 +455,16 @@ function buildActArgs(options) {
   return args;
 }
 
-function resolvePreset(name) {
+function resolvePreset(name, platform = process.platform) {
+  if (name === 'vscode:test') {
+    return platform === 'linux'
+      ? {
+          command: 'xvfb-run',
+          args: ['-a', '--server-args=-screen 0 1920x1080x24', 'pnpm', 'test:vscode'],
+        }
+      : { command: 'pnpm', args: ['test:vscode'] };
+  }
+
   const preset = PRESETS[name];
   if (!preset) {
     fail(`Unknown preset: ${name}`);
@@ -560,21 +569,27 @@ async function main() {
   return runAct(actArgs, env);
 }
 
-main()
-  .then((exitCode) => {
-    process.exit(exitCode);
-  })
-  .catch((error) => {
-    if (error?.signal) {
-      process.exit(signalExitCode(error.signal));
-      return;
-    }
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 
-    if (error?.code === 'ENOENT' && error?.path === 'act') {
-      console.error('Error: act is not installed or not on PATH');
-    } else {
-      console.error(error instanceof Error ? error.stack || error.message : String(error));
-    }
+if (isMain) {
+  main()
+    .then((exitCode) => {
+      process.exit(exitCode);
+    })
+    .catch((error) => {
+      if (error?.signal) {
+        process.exit(signalExitCode(error.signal));
+        return;
+      }
 
-    process.exit(1);
-  });
+      if (error?.code === 'ENOENT' && error?.path === 'act') {
+        console.error('Error: act is not installed or not on PATH');
+      } else {
+        console.error(error instanceof Error ? error.stack || error.message : String(error));
+      }
+
+      process.exit(1);
+    });
+}
+
+export { resolvePreset, formatPresetCommand };
