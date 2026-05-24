@@ -11,6 +11,8 @@ export const THEMES: Theme[] = [
     swatchAccent: '#7a3a20',
     fontPreview: '"Source Serif 4", serif',
     letter: 'Aa',
+    mermaidTheme: 'neutral',
+    isDark: false,
   },
   {
     id: 'lamplight',
@@ -22,6 +24,8 @@ export const THEMES: Theme[] = [
     swatchAccent: '#d49a4f',
     fontPreview: '"Source Serif 4", serif',
     letter: 'Aa',
+    mermaidTheme: 'dark',
+    isDark: true,
   },
   {
     id: 'manual',
@@ -33,6 +37,8 @@ export const THEMES: Theme[] = [
     swatchAccent: '#2266c4',
     fontPreview: 'Inter, sans-serif',
     letter: 'Aa',
+    mermaidTheme: 'neutral',
+    isDark: false,
   },
   {
     id: 'console',
@@ -44,6 +50,8 @@ export const THEMES: Theme[] = [
     swatchAccent: '#58a6ff',
     fontPreview: 'Inter, sans-serif',
     letter: 'Aa',
+    mermaidTheme: 'dark',
+    isDark: true,
   },
   {
     id: 'contrast',
@@ -55,5 +63,7 @@ export const THEMES: Theme[] = [
     swatchAccent: '#ffe14a',
     fontPreview: 'Inter, sans-serif',
     letter: 'Aa',
+    mermaidTheme: 'dark',
+    isDark: true,
   },
 ];
