@@ -6,3 +6,4 @@ export * from './mermaid.js';
 export * from './bootstrap.js';
 export * from './stats.js';
 export * from './code-blocks.js';
+export { renderDocument } from './renderer.js';
