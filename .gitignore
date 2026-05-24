@@ -16,3 +16,4 @@ docs/*
 test-results
 .pnpm-store
 .superpowers
+.worktrees
