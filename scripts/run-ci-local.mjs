@@ -27,10 +27,12 @@ function usage() {
 
   return `Usage:
   node scripts/run-ci-local.mjs --help
+  node scripts/run-ci-local.mjs [--workflow <path>] [--container-architecture <arch>] [--keep-container] [--dry-run] [--verbose]
   node scripts/run-ci-local.mjs --job <name> [--workflow <path>] [--container-architecture <arch>] [--keep-container] [--dry-run] [--verbose]
   node scripts/run-ci-local.mjs --step <name> [--step <name> ...] [--dry-run] [--verbose]
 
 Modes:
+  Default mode runs the full workflow at ${DEFAULT_WORKFLOW} with act.
   Workflow/job mode runs a GitHub Actions job with act.
     - --job <name> selects the workflow job
     - --workflow defaults to ${DEFAULT_WORKFLOW}
@@ -436,7 +438,11 @@ async function resolveDockerHost(verbose) {
 }
 
 function buildActArgs(options) {
-  const args = ['-W', options.workflow, '-j', options.job];
+  const args = ['-W', options.workflow];
+
+  if (options.job) {
+    args.push('-j', options.job);
+  }
 
   if (!options.keepContainer) {
     args.push('--rm');
@@ -517,10 +523,6 @@ async function main() {
 
   if (options.job && options.steps.length > 0) {
     fail('--job and --step are mutually exclusive');
-  }
-
-  if (!options.job && options.steps.length === 0) {
-    fail('Specify either --job <name> or one or more --step <name> flags');
   }
 
   if (options.steps.length > 0) {
