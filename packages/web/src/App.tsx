@@ -1,15 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect, useReducer } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react';
 import {
   THEMES,
-  configureMarked,
-  renderMarkdown,
+  renderDocument,
   extractToc,
-  renderMermaidDiagrams,
-  enhanceCodeBlocks,
-  runAbortableTask,
-  subscribeWindowEvent,
   estimateReadingTime,
-  MATH_READY_EVENT,
   type Theme,
   type ThemeId,
   type DocState,
@@ -511,14 +505,11 @@ export function App() {
   const [searchCount, setSearchCount] = useState(0);
   const [searchIndex, setSearchIndex] = useState(-1);
   const searchMatchesRef = useRef<HTMLElement[]>([]);
-  const [mathVersion, bumpMathVersion] = useReducer((v: number) => v + 1, 0);
-
   const [activeId, setActiveId] = useState('');
   const contentRef = useRef<HTMLElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    configureMarked();
     const last = loadLastDoc();
     if (last?.markdown) setDoc({ markdown: last.markdown, name: last.name ?? '' });
   }, []);
@@ -529,25 +520,18 @@ export function App() {
     savePrefs({ ...prefs, theme, sidebarCollapsed });
   }, [theme, sidebarCollapsed]);
 
-  useEffect(() => subscribeWindowEvent(MATH_READY_EVENT, () => bumpMathVersion()), []);
-
-  const renderedHtml = useMemo(() => {
-    if (!doc.markdown) return '';
-    return renderMarkdown(doc.markdown);
-  }, [doc.markdown, mathVersion]);
-
   const toc = useMemo(() => {
     if (!doc.markdown) return [];
     return extractToc(doc.markdown);
   }, [doc.markdown]);
 
-  useEffect(() => runAbortableTask((signal) => {
-    void renderMermaidDiagrams(contentRef.current, theme, { signal });
-  }), [renderedHtml, theme]);
-
   useEffect(() => {
-    enhanceCodeBlocks(contentRef.current);
-  }, [renderedHtml]);
+    if (!contentRef.current || !doc.markdown) return;
+    const themeObj = THEMES.find((t) => t.id === theme) ?? THEMES[0]!;
+    const ac = new AbortController();
+    void renderDocument(contentRef.current, doc.markdown, themeObj, ac.signal);
+    return () => ac.abort();
+  }, [doc.markdown, theme]);
 
   useEffect(() => {
     setActiveId(toc[0]?.id ?? '');
@@ -571,7 +555,7 @@ export function App() {
       setSearchIndex(matches.length ? 0 : -1);
     }, 100);
     return () => clearTimeout(handle);
-  }, [searchQuery, renderedHtml]);
+  }, [searchQuery, doc.markdown]);
 
   useEffect(() => {
     const matches = searchMatchesRef.current;
@@ -718,7 +702,6 @@ export function App() {
         <SidebarRail onExpand={() => setSidebarCollapsed(false)} />
       )}
       <ReaderPane
-        renderedHtml={renderedHtml}
         theme={theme}
         stats={stats}
         docName={doc.name}
