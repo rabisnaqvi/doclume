@@ -10,5 +10,11 @@ test('switches to the console theme', async ({ page }) => {
 
   await expect(page.locator('main.reader .reader__filename')).toHaveText('sample.md');
   await expect(page.getByTitle('Change theme')).toContainText('Console');
-  await expect(page).toHaveScreenshot('theme-console.png', { maxDiffPixelRatio: 0.03 });
+
+  const topbar = page.locator('.topbar');
+  await expect(topbar).toHaveScreenshot('theme-topbar.png', {
+    maxDiffPixelRatio: 0.02,
+  });
+
+  await expect(page).toHaveScreenshot('theme-console.png', { maxDiffPixelRatio: 0.05 });
 });

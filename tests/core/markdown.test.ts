@@ -26,6 +26,45 @@ describe('markdown rendering', () => {
     expect(html).toContain('<dd>Definition with <code>code</code></dd>');
   });
 
+  it('renders supported GFM alert blockquotes as admonitions', () => {
+    const html = renderMarkdown([
+      '> [!NOTE]',
+      '> Note body with **strong** text.',
+      '',
+      '> [!WARNING]',
+      '> Warning body',
+    ].join('\n'));
+
+    expect(html).toContain('class="admonition admonition--note"');
+    expect(html).toContain('class="admonition__title"');
+    expect(html).toContain('NOTE');
+    expect(html).toContain('<strong>strong</strong>');
+    expect(html).toContain('class="admonition admonition--warning"');
+  });
+
+  it('keeps plain and unsupported alert blockquotes as blockquotes', () => {
+    const html = renderMarkdown([
+      '> Plain quote',
+      '',
+      '> [!CUSTOM]',
+      '> Custom body',
+    ].join('\n'));
+
+    expect(html).toContain('<blockquote>');
+    expect(html).toContain('<p>Plain quote</p>');
+    expect(html).toContain('<p>[!CUSTOM]\nCustom body</p>');
+    expect(html).not.toContain('admonition--custom');
+  });
+
+  it('renders mixed-case mermaid fences as diagrams', () => {
+    for (const lang of ['Mermaid', 'MERMAID']) {
+      const html = renderMarkdown(['```' + lang, 'flowchart TD', 'A-->B', '```'].join('\n'));
+
+      expect(html).toContain('<div class="mermaid"');
+      expect(html).not.toContain('<pre><code');
+    }
+  });
+
   it('omits unsafe language classes for unknown code fences', () => {
     const html = renderMarkdown('```foo" onmouseover="x\nalert(1)\n```');
 

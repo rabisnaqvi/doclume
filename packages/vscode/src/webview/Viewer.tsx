@@ -3,6 +3,7 @@ import {
   configureMarked,
   renderMarkdown,
   renderMermaidDiagrams,
+  enhanceCodeBlocks,
   runAbortableTask,
   subscribeWindowEvent,
   MATH_READY_EVENT,
@@ -68,6 +69,10 @@ export function Viewer() {
   useEffect(() => runAbortableTask((signal) => {
     void renderMermaidDiagrams(contentRef.current, theme, { signal });
   }), [renderedHtml, theme]);
+
+  useEffect(() => {
+    enhanceCodeBlocks(contentRef.current);
+  }, [renderedHtml]);
 
   if (!markdown) {
     return (

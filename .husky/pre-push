@@ -1,0 +1,8 @@
+pnpm ci:local \
+  --step install \
+  --step typecheck \
+  --step core:test \
+  --step web:deps \
+  --step web:browser \
+  --step web:test \
+  --step vscode:test
