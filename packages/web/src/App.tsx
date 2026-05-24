@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffe
 import {
   THEMES,
   configureMarked,
-  renderMarkdownWithMeta,
+  renderMarkdown,
+  extractToc,
   renderMermaidDiagrams,
   enhanceCodeBlocks,
   runAbortableTask,
@@ -530,11 +531,15 @@ export function App() {
 
   useEffect(() => subscribeWindowEvent(MATH_READY_EVENT, () => bumpMathVersion()), []);
 
-  const { renderedHtml, toc } = useMemo(() => {
-    if (!doc.markdown) return { renderedHtml: '', toc: [] };
-    const { html, toc: nextToc } = renderMarkdownWithMeta(doc.markdown);
-    return { renderedHtml: html, toc: nextToc };
+  const renderedHtml = useMemo(() => {
+    if (!doc.markdown) return '';
+    return renderMarkdown(doc.markdown);
   }, [doc.markdown, mathVersion]);
+
+  const toc = useMemo(() => {
+    if (!doc.markdown) return [];
+    return extractToc(doc.markdown);
+  }, [doc.markdown]);
 
   useEffect(() => runAbortableTask((signal) => {
     void renderMermaidDiagrams(contentRef.current, theme, { signal });

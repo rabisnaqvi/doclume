@@ -85,6 +85,32 @@ describe('renderMermaidDiagrams', () => {
     expect(node.innerHTML).toContain('<svg');
   });
 
+  it('reinitializes Mermaid when the theme changes between calls', async () => {
+    document.body.innerHTML = `
+      <div id="root">
+        <div class="mermaid" data-src="flowchart TD\nA-->B"></div>
+      </div>
+    `;
+
+    const root = document.getElementById('root');
+    const node = root?.querySelector('.mermaid') as HTMLElement;
+    vi.spyOn(node, 'getBoundingClientRect').mockReturnValue({
+      x: 0, y: 0, top: 0, left: 0, right: 10, bottom: 10,
+      width: 10, height: 10, toJSON() {},
+    });
+
+    await renderMermaidDiagrams(root, 'manual', { runtime: mermaidModule });
+    await renderMermaidDiagrams(root, 'lamplight', { runtime: mermaidModule });
+
+    expect(mermaidModule.initialize).toHaveBeenCalledTimes(2);
+    expect(mermaidModule.initialize).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      theme: 'neutral',
+    }));
+    expect(mermaidModule.initialize).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      theme: 'dark',
+    }));
+  });
+
   it('renders the initial visible batch serially', async () => {
     document.body.innerHTML = `
       <div id="root">
