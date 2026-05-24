@@ -1,4 +1,3 @@
-import type { ThemeId } from './types.js';
 import { sanitizeMermaidSvg } from './sanitize.js';
 
 let mermaidBootstrap: Promise<void> | null = null;
@@ -10,10 +9,6 @@ async function ensureMermaidBootstrap(mermaid: { parse: (code: string) => Promis
       .then(() => undefined, () => undefined);
   }
   await mermaidBootstrap;
-}
-
-export function getMermaidTheme(theme: ThemeId): 'dark' | 'neutral' {
-  return (theme === 'lamplight' || theme === 'console' || theme === 'contrast') ? 'dark' : 'neutral';
 }
 
 export interface RenderMermaidOptions {
@@ -41,7 +36,7 @@ type MermaidRuntime = {
 /** Render `.mermaid` placeholders under `root` (dynamic import; safe in browser/webview only). */
 export async function renderMermaidDiagrams(
   root: ParentNode | null | undefined,
-  theme: ThemeId,
+  mermaidTheme: 'dark' | 'neutral',
   options?: RenderMermaidOptions,
 ): Promise<void> {
   const nodes = Array.from(root?.querySelectorAll<HTMLElement>('.mermaid') ?? []);
@@ -98,7 +93,7 @@ export async function renderMermaidDiagrams(
         if (!initialized) {
           mermaid.initialize({
             startOnLoad: false,
-            theme: getMermaidTheme(theme),
+            theme: mermaidTheme,
             securityLevel: 'strict',
             htmlLabels: false,
           });
