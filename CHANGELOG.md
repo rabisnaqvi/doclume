@@ -9,6 +9,8 @@ Monorepo releases use one version across the repo root, `@doclume/core`, `@doclu
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-24
+
 ### Added
 - Admonition blocks — GitHub-style `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, and `[!CAUTION]` blockquotes now render as styled callouts with icons, themed per each of the five themes.
 - Code block copy button and language label — code blocks now show an always-visible header on desktop and touch devices, with the language label on the left and a copy control on the right. Syntax-highlighted blocks now scroll horizontally without showing a scrollbar.
