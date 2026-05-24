@@ -19,14 +19,24 @@ export async function renderDocument(
   enhanceCodeBlocks(container);
 
   if (typeof window !== 'undefined' && container.querySelector('.math-pending')) {
-    const handleMathReady = (): void => {
-      if (signal.aborted) return;
-      const { html: updatedHtml } = renderMarkdownWithMeta(markdown);
-      container.innerHTML = updatedHtml;
-      enhanceCodeBlocks(container);
-    };
-    window.addEventListener(MATH_READY_EVENT, handleMathReady, { once: true, signal });
+    await new Promise<void>((resolve) => {
+      const handleMathReady = (): void => {
+        if (!signal.aborted) {
+          const { html: updatedHtml } = renderMarkdownWithMeta(markdown);
+          container.innerHTML = updatedHtml;
+          enhanceCodeBlocks(container);
+        }
+        resolve();
+      };
+      signal.addEventListener('abort', () => resolve(), { once: true });
+      window.addEventListener(MATH_READY_EVENT, handleMathReady, { once: true, signal });
+    });
   }
+
+  if (signal.aborted) return;
+
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  if (signal.aborted) return;
 
   await renderMermaidDiagrams(container, theme.mermaidTheme, { signal });
 }
