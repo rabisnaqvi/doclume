@@ -85,7 +85,7 @@ describe('renderMermaidDiagrams', () => {
     expect(node.innerHTML).toContain('<svg');
   });
 
-  it('renders the initial visible batch in parallel', async () => {
+  it('renders the initial visible batch serially', async () => {
     document.body.innerHTML = `
       <div id="root">
         <div class="mermaid" data-src="flowchart TD\nA-->B"></div>
@@ -114,8 +114,11 @@ describe('renderMermaidDiagrams', () => {
     });
 
     const done = renderMermaidDiagrams(root, 'manual', { runtime: mermaidModule });
-    await vi.waitFor(() => expect(mermaidModule.render).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(mermaidModule.render).toHaveBeenCalledTimes(1));
+    expect(mermaidModule.render).toHaveBeenCalledTimes(1);
+
     releaseRender?.();
+    await vi.waitFor(() => expect(mermaidModule.render).toHaveBeenCalledTimes(2));
     await done;
 
     expect(nodes[0].innerHTML).toContain('<svg');
@@ -191,10 +194,10 @@ describe('renderMermaidDiagrams', () => {
 
     FakeResizeObserver.instances[0]?.trigger(first);
     await vi.waitFor(() => expect(mermaidModule.render).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(first.innerHTML).toContain('<svg'));
 
     expect(firstRect).toHaveBeenCalled();
     expect(secondRect).not.toHaveBeenCalled();
-    expect(first.innerHTML).toContain('<svg');
     expect(second.innerHTML).toBe('');
   });
 
@@ -222,10 +225,8 @@ describe('renderMermaidDiagrams', () => {
       width: 10, height: 10, toJSON() {},
     });
     FakeIntersectionObserver.instances[0]?.trigger(node, true);
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    expect(mermaidModule.render).toHaveBeenCalledTimes(1);
-    expect(node.innerHTML).toContain('<svg');
+    await vi.waitFor(() => expect(mermaidModule.render).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(node.innerHTML).toContain('<svg'));
   });
 
   it('does not duplicate an in-flight render when rechecked', async () => {
@@ -312,10 +313,11 @@ describe('renderMermaidDiagrams', () => {
     expect(mermaidModule.render).toHaveBeenCalledTimes(0);
 
     rafCallback?.(0);
-    await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(mermaidModule.render).toHaveBeenCalledTimes(2);
-    nodes.forEach((node) => expect(node.innerHTML).toContain('<svg'));
+    await vi.waitFor(() => {
+      expect(mermaidModule.render).toHaveBeenCalledTimes(2);
+      nodes.forEach((node) => expect(node.innerHTML).toContain('<svg'));
+    });
   });
 
   it('stops on abort before intersection', async () => {

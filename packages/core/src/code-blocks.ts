@@ -88,11 +88,13 @@ export function enhanceCodeBlocks(root: ParentNode | null | undefined): void {
 
   bindCopyHandler(root);
 
-  const blocks = Array.from(root.querySelectorAll<HTMLElement>('pre > code.hljs'));
+  const blocks = Array.from(
+    root.querySelectorAll<HTMLElement>(`pre:not(.${ENHANCED_CLASS}) > code.hljs`),
+  );
 
   for (const code of blocks) {
     const pre = code.parentElement;
-    if (!pre || pre.classList.contains(ENHANCED_CLASS)) {
+    if (!pre) {
       continue;
     }
 

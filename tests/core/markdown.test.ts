@@ -56,6 +56,15 @@ describe('markdown rendering', () => {
     expect(html).not.toContain('admonition--custom');
   });
 
+  it('renders mixed-case mermaid fences as diagrams', () => {
+    for (const lang of ['Mermaid', 'MERMAID']) {
+      const html = renderMarkdown(['```' + lang, 'flowchart TD', 'A-->B', '```'].join('\n'));
+
+      expect(html).toContain('<div class="mermaid"');
+      expect(html).not.toContain('<pre><code');
+    }
+  });
+
   it('omits unsafe language classes for unknown code fences', () => {
     const html = renderMarkdown('```foo" onmouseover="x\nalert(1)\n```');
 

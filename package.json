@@ -2,6 +2,7 @@
   "name": "doclume-monorepo",
   "private": true,
   "version": "0.2.0",
+  "packageManager": "pnpm@11.0.6",
   "pnpm": {
     "overrides": {
       "qs": "^6.15.2"

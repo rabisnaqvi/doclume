@@ -14,7 +14,10 @@ Monorepo releases use one version across the repo root, `@doclume/core`, `@doclu
 - Code block copy button and language label — code blocks now show an always-visible header on desktop and touch devices, with the language label on the left and a copy control on the right. Syntax-highlighted blocks now scroll horizontally without showing a scrollbar.
 
 ### Fixed
+- Mermaid fences are now case-insensitive during markdown rendering, so `Mermaid` and `MERMAID` render as diagrams instead of highlighted code.
 - Mermaid diagrams failed to render on first open in VS Code and Cursor; diagrams now initialize reliably via visibility-aware deferred rendering with bootstrap parsing and do not duplicate work when visibility or resize rechecks fire during an in-flight render.
+- Upgraded `qs` to `^6.15.2` via a pnpm override to address the known vulnerability.
+- Aligned the repo and CI to pnpm 11 so frozen installs no longer fail the lockfile config check under `ci:local`.
 
 ## [0.2.0] - 2026-05-20
 

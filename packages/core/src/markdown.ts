@@ -310,12 +310,12 @@ function normalizeLanguage(lang: string | undefined): string | undefined {
 }
 
 function renderCodeBlock(code: string, lang: string | undefined): string {
-  if (lang === 'mermaid') {
+  const normalized = normalizeLanguage(lang);
+  if (normalized === 'mermaid') {
     const escaped = escapeHtml(code);
     return `<div class="mermaid" data-src="${escaped}">${escaped}</div>\n`;
   }
 
-  const normalized = normalizeLanguage(lang);
   const className = normalized && hljs.getLanguage(normalized) ? ` language-${normalized}` : '';
 
   if (className && normalized) {

@@ -172,9 +172,12 @@ export async function renderMermaidDiagrams(
       const queued = Array.from(recheckQueue);
       recheckQueue.clear();
       const visible = queued.filter((node) => pending.has(node) && isRenderable(node));
-      void Promise.all(visible.map(renderOne)).then(() => {
+      void (async () => {
+        for (const node of visible) {
+          await renderOne(node);
+        }
         if (!pending.size) cleanup();
-      });
+      })();
     });
   };
 
@@ -201,11 +204,8 @@ export async function renderMermaidDiagrams(
   document.addEventListener('visibilitychange', handleVisibilityChange);
   options?.signal?.addEventListener('abort', cleanup, { once: true });
 
-  const initialResults = await Promise.all(nodes.map(async (node) => ({
-    node,
-    result: await renderOne(node),
-  })));
-  for (const { node, result } of initialResults) {
+  for (const node of nodes) {
+    const result = await renderOne(node);
     if (result === 'deferred') observer?.observe(node);
   }
 
