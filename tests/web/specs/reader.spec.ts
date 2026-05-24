@@ -90,8 +90,13 @@ test('renders Mermaid on first open', async ({ page }) => {
   await page.evaluate(() => document.fonts.ready);
 
   const article = page.locator('article.markdown');
-  await expect(article.locator('.mermaid svg')).toBeVisible();
-  await expect(article.locator('.mermaid')).not.toContainText('flowchart TD');
+  const mermaid = article.locator('.mermaid').first();
+  await expect(mermaid.locator('svg')).toBeVisible();
+  await expect(mermaid).not.toContainText('flowchart TD');
+  await page.addStyleTag({ content: 'article.markdown .mermaid { box-sizing: border-box !important; height: 374px !important; overflow: hidden !important; }' });
+  await expect(mermaid).toHaveScreenshot('reader-mermaid.png', {
+    maxDiffPixelRatio: 0.02,
+  });
 });
 
 test('loads the sample document', async ({ page }) => {
@@ -119,14 +124,10 @@ test('loads the sample document', async ({ page }) => {
   await expect(copyIcon).toBeVisible();
   await expect(copyButton).toBeVisible();
   await expect(languageLabel).toHaveText('typescript');
-
-  await copyButton.focus();
-  await expect(copyButton).toBeFocused();
-  await expect(copyButton).toBeVisible();
-
-  await copyButton.click();
-  await expect(copyButton).toHaveText('Copied ✓');
-  await expect(reader.locator('article.markdown .mermaid svg')).toHaveCount(2);
+  await expect(firstCodeBlock).toHaveScreenshot('reader-sample-code-block.png', {
+    maxDiffPixelRatio: 0.07,
+  });
+  await page.addStyleTag({ content: 'article.markdown .mermaid { box-sizing: border-box !important; height: 374px !important; overflow: hidden !important; }' });
   await page.addStyleTag({ content: 'main.reader { height: 1400px !important; overflow: hidden !important; }' });
   await page.addStyleTag({ content: `
     .topbar {
@@ -135,4 +136,12 @@ test('loads the sample document', async ({ page }) => {
   ` });
 
   await expect(reader).toHaveScreenshot('reader-sample.png', { maxDiffPixelRatio: 0.11 });
+
+  await copyButton.focus();
+  await expect(copyButton).toBeFocused();
+  await expect(copyButton).toBeVisible();
+
+  await copyButton.click();
+  await expect(copyButton).toHaveText('Copied ✓');
+  await expect(reader.locator('article.markdown .mermaid svg')).toHaveCount(2);
 });

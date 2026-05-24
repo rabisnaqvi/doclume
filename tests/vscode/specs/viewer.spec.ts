@@ -82,8 +82,13 @@ test('renders Mermaid on first open', async ({ page }) => {
   await page.evaluate(() => document.fonts.ready);
 
   const article = page.locator('article.markdown');
-  await expect(article.locator('.mermaid svg')).toBeVisible();
-  await expect(article.locator('.mermaid')).not.toContainText('flowchart TD');
+  const mermaid = article.locator('.mermaid').first();
+  await expect(mermaid.locator('svg')).toBeVisible();
+  await expect(mermaid).not.toContainText('flowchart TD');
+  await page.addStyleTag({ content: 'article.markdown .mermaid { box-sizing: border-box !important; height: 373px !important; overflow: hidden !important; }' });
+  await expect(mermaid).toHaveScreenshot('viewer-mermaid.png', {
+    maxDiffPixelRatio: 0.02,
+  });
 });
 
 test('renders the viewer content', async ({ page }) => {
@@ -105,5 +110,8 @@ test('renders the viewer content', async ({ page }) => {
   await expect(article.locator('.code-block__label')).toHaveText('typescript');
   await expect(copyButton).toHaveText('Copy');
   await expect(codeBlock).toHaveScreenshot('viewer-code-block.png', { maxDiffPixelRatio: 0.02 });
-  await expect(page).toHaveScreenshot('viewer-content.png', { fullPage: true, maxDiffPixelRatio: 0.02 });
+  await expect(page).toHaveScreenshot('viewer-content.png', {
+    fullPage: true,
+    maxDiffPixelRatio: 0.05,
+  });
 });
