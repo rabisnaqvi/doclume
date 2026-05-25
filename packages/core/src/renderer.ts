@@ -1,4 +1,4 @@
-import { configureMarked, renderMarkdownWithMeta, MATH_READY_EVENT } from './markdown.js';
+import { renderMarkdownWithMeta, MATH_READY_EVENT } from './markdown.js';
 import { renderMermaidDiagrams } from './mermaid.js';
 import { enhanceCodeBlocks } from './code-blocks.js';
 import type { Theme } from './types.js';
@@ -10,8 +10,6 @@ export async function renderDocument(
   signal: AbortSignal,
 ): Promise<void> {
   if (signal.aborted) return;
-
-  configureMarked();
 
   const { html } = renderMarkdownWithMeta(markdown);
   container.innerHTML = html;
