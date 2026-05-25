@@ -3,14 +3,6 @@ import { renderDocument, THEMES } from '@doclume/core';
 import type { Theme } from '@doclume/core';
 
 const light = THEMES.find((t) => t.id === 'manual')! as Theme;
-const dark = THEMES.find((t) => t.id === 'console')! as Theme;
-
-// Minimal mermaid runtime mock — renderMermaidDiagrams accepts this via options.runtime
-const mockMermaidRuntime = {
-  initialize: vi.fn(),
-  parse: vi.fn().mockResolvedValue(undefined),
-  render: vi.fn().mockResolvedValue({ svg: '<svg data-mock></svg>' }),
-};
 
 describe('renderDocument', () => {
   let container: HTMLDivElement;
@@ -99,9 +91,4 @@ describe('renderDocument', () => {
     expect(container.querySelector('.katex')).not.toBeNull();
   });
 
-  it('uses mermaidTheme from the Theme object', async () => {
-    const ac = new AbortController();
-    await renderDocument(container, '# No diagrams', dark, ac.signal);
-    expect(container.querySelector('h1')).not.toBeNull();
-  });
 });

@@ -10,10 +10,14 @@ async function render(markdown: string): Promise<string> {
   const container = document.createElement('div');
   document.body.appendChild(container);
   const ac = new AbortController();
-  await renderDocument(container, markdown, theme, ac.signal);
-  const html = container.innerHTML;
-  container.remove();
-  return html;
+
+  try {
+    await renderDocument(container, markdown, theme, ac.signal);
+    return container.innerHTML;
+  } finally {
+    ac.abort();
+    container.remove();
+  }
 }
 
 describe('support content', () => {
