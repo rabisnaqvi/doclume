@@ -530,9 +530,20 @@ export function App() {
     if (!contentRef.current || !doc.markdown) return;
     const themeObj = THEMES.find((t) => t.id === theme) ?? THEMES[0]!;
     const ac = new AbortController();
-    void renderDocument(contentRef.current, doc.markdown, themeObj, ac.signal).then(() => {
-      if (!ac.signal.aborted) bumpRenderVersion();
-    });
+    const container = contentRef.current;
+
+    void (async () => {
+      try {
+        await renderDocument(container, doc.markdown, themeObj, ac.signal);
+      } catch (err) {
+        if (ac.signal.aborted) return;
+        console.error('Doclume: renderDocument failed', err);
+        container.innerHTML = '<p><strong>Render failed.</strong> Check browser console for details.</p>';
+      } finally {
+        if (!ac.signal.aborted) bumpRenderVersion();
+      }
+    })();
+
     return () => ac.abort();
   }, [doc.markdown, theme]);
 

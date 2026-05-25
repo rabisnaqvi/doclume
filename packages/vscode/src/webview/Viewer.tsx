@@ -58,7 +58,14 @@ export function Viewer() {
     if (!contentRef.current || !markdown) return;
     const themeObj = THEMES.find((t) => t.id === theme) ?? THEMES[0]!;
     const ac = new AbortController();
-    void renderDocument(contentRef.current, markdown, themeObj, ac.signal);
+    const container = contentRef.current;
+
+    void renderDocument(container, markdown, themeObj, ac.signal).catch((err) => {
+      if (ac.signal.aborted) return;
+      console.error('Doclume: renderDocument failed', err);
+      container.innerHTML = '<p><strong>Render failed.</strong> Open Developer Tools console for details.</p>';
+    });
+
     return () => ac.abort();
   }, [markdown, theme]);
 
