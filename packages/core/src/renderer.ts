@@ -44,7 +44,26 @@ export async function renderDocument(
 
   if (signal.aborted) return;
 
-  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  const raf: ((cb: FrameRequestCallback) => number) | undefined =
+    typeof requestAnimationFrame === 'function'
+      ? requestAnimationFrame
+      : (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
+          ? window.requestAnimationFrame.bind(window)
+          : undefined);
+
+  await new Promise<void>((resolve) => {
+    if (signal.aborted) return resolve();
+
+    const handleAbort = (): void => resolve();
+    signal.addEventListener('abort', handleAbort, { once: true });
+
+    if (raf) {
+      raf(() => resolve());
+      return;
+    }
+
+    setTimeout(() => resolve(), 0);
+  });
   if (signal.aborted) return;
 
   await renderMermaidDiagrams(container, theme.mermaidTheme, { signal });

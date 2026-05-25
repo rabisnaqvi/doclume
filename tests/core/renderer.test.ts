@@ -55,6 +55,20 @@ describe('renderDocument', () => {
     await expect(renderDocument(container, '', light, ac.signal)).resolves.toBeUndefined();
   });
 
+  it('falls back when requestAnimationFrame is unavailable', async () => {
+    vi.stubGlobal('requestAnimationFrame', undefined);
+    // In jsdom, window is the global object, but keep this explicit for safety.
+    (window as any).requestAnimationFrame = undefined;
+
+    try {
+      const ac = new AbortController();
+      await expect(renderDocument(container, '# Hello World', light, ac.signal)).resolves.toBeUndefined();
+      expect(container.querySelector('h1')?.textContent).toBe('Hello World');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('is idempotent for code block enhancement on re-render', async () => {
     const ac1 = new AbortController();
     await renderDocument(container, '```ts\nconst x = 1;\n```', light, ac1.signal);
