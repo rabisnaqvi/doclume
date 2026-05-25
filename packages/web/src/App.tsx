@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect, useReducer } from 'react';
 import {
   THEMES,
   renderDocument,
@@ -504,6 +504,7 @@ export function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchCount, setSearchCount] = useState(0);
   const [searchIndex, setSearchIndex] = useState(-1);
+  const [renderVersion, bumpRenderVersion] = useReducer((v: number) => v + 1, 0);
   const searchMatchesRef = useRef<HTMLElement[]>([]);
   const [activeId, setActiveId] = useState('');
   const contentRef = useRef<HTMLElement>(null);
@@ -529,7 +530,9 @@ export function App() {
     if (!contentRef.current || !doc.markdown) return;
     const themeObj = THEMES.find((t) => t.id === theme) ?? THEMES[0]!;
     const ac = new AbortController();
-    void renderDocument(contentRef.current, doc.markdown, themeObj, ac.signal);
+    void renderDocument(contentRef.current, doc.markdown, themeObj, ac.signal).then(() => {
+      if (!ac.signal.aborted) bumpRenderVersion();
+    });
     return () => ac.abort();
   }, [doc.markdown, theme]);
 
@@ -555,7 +558,7 @@ export function App() {
       setSearchIndex(matches.length ? 0 : -1);
     }, 100);
     return () => clearTimeout(handle);
-  }, [searchQuery, doc.markdown]);
+  }, [searchQuery, doc.markdown, renderVersion]);
 
   useEffect(() => {
     const matches = searchMatchesRef.current;
@@ -601,7 +604,7 @@ export function App() {
 
     headingEls.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, [toc]);
+  }, [toc, renderVersion]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
