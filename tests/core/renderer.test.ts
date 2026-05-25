@@ -84,21 +84,19 @@ describe('renderDocument', () => {
 
   it('re-renders when MATH_READY_EVENT fires and math-pending elements exist', async () => {
     const ac = new AbortController();
-    // Inject a .math-pending node manually to simulate pre-KaTeX state
-    container.innerHTML = '<span class="math-pending"><code>x^2</code></span>';
 
-    // Start renderDocument with markdown that would produce math (we stub the pending state above)
-    // We just need to confirm the listener fires and triggers a re-render
-    const renderPromise = renderDocument(container, '# No math here', light, ac.signal);
+    // Render markdown that produces a `.math-pending` node (KaTeX is lazy-loaded).
+    const renderPromise = renderDocument(container, 'Inline math: $x^2$', light, ac.signal);
 
-    // Dispatch math-ready before awaiting
-    window.dispatchEvent(new Event('doclume:math-ready'));
+    // `renderDocument` runs synchronously until it starts awaiting the math-ready event.
+    expect(container.querySelector('.math-pending')).not.toBeNull();
+    expect(container.querySelector('.katex')).toBeNull();
 
     await renderPromise;
 
-    // After re-render, the injected .math-pending span is gone (container was replaced)
+    // After math-ready, `renderDocument` should re-render with KaTeX output.
     expect(container.querySelector('.math-pending')).toBeNull();
-    expect(container.querySelector('h1')).not.toBeNull();
+    expect(container.querySelector('.katex')).not.toBeNull();
   });
 
   it('uses mermaidTheme from the Theme object', async () => {
