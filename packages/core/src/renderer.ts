@@ -12,18 +12,29 @@ export async function renderDocument(
   if (signal.aborted) return;
 
   const { html } = renderMarkdownWithMeta(markdown);
+
+  // Abort can race between the initial guard and DOM mutation.
+  if (signal.aborted) return;
   container.innerHTML = html;
 
+  // DOM enhancement mutates the container as well.
+  if (signal.aborted) return;
   enhanceCodeBlocks(container);
 
   if (typeof window !== 'undefined' && container.querySelector('.math-pending')) {
     await new Promise<void>((resolve) => {
       const handleMathReady = (): void => {
-        if (!signal.aborted) {
-          const { html: updatedHtml } = renderMarkdownWithMeta(markdown);
-          container.innerHTML = updatedHtml;
-          enhanceCodeBlocks(container);
-        }
+        if (signal.aborted) return resolve();
+
+        const { html: updatedHtml } = renderMarkdownWithMeta(markdown);
+
+        // Abort can race inside the math-ready callback too.
+        if (signal.aborted) return resolve();
+        container.innerHTML = updatedHtml;
+
+        if (signal.aborted) return resolve();
+        enhanceCodeBlocks(container);
+
         resolve();
       };
       signal.addEventListener('abort', () => resolve(), { once: true });

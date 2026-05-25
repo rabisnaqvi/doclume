@@ -10,6 +10,7 @@ Monorepo releases use one version across the repo root, `@doclume/core`, `@doclu
 ## [Unreleased]
 
 ### Fixed
+- Prevent aborted `renderDocument()` renders from mutating the DOM (avoid stale HTML paint + enhancements after `AbortSignal` aborts).
 - Handle `renderDocument()` failures in web app + VS Code webview (avoid unhandled promise rejections, show fallback message, keep observers in sync).
 
 ## [0.3.0] - 2026-05-24
