@@ -72,15 +72,23 @@ export async function renderDocument(
   await new Promise<void>((resolve) => {
     if (signal.aborted) return resolve();
 
-    const handleAbort = (): void => resolve();
+    let done = false;
+    const finish = (): void => {
+      if (done) return;
+      done = true;
+      signal.removeEventListener('abort', handleAbort);
+      resolve();
+    };
+
+    const handleAbort = (): void => finish();
     signal.addEventListener('abort', handleAbort, { once: true });
 
     if (raf) {
-      raf(() => resolve());
+      raf(() => finish());
       return;
     }
 
-    setTimeout(() => resolve(), 0);
+    setTimeout(() => finish(), 0);
   });
   if (signal.aborted) return;
 
