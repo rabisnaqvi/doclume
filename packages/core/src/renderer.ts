@@ -23,22 +23,40 @@ export async function renderDocument(
 
   if (typeof window !== 'undefined' && container.querySelector('.math-pending')) {
     await new Promise<void>((resolve) => {
-      const handleMathReady = (): void => {
-        if (signal.aborted) return resolve();
+      if (signal.aborted) return resolve();
+
+      let done = false;
+      const finish = (): void => {
+        if (done) return;
+        done = true;
+        signal.removeEventListener('abort', onAbort);
+        window.removeEventListener(MATH_READY_EVENT, onMathReady);
+        window.clearTimeout(timeout);
+        resolve();
+      };
+
+      const onAbort = (): void => finish();
+      const onMathReady = (_event: Event): void => {
+        if (signal.aborted) return finish();
 
         const { html: updatedHtml } = renderMarkdownWithMeta(markdown);
 
         // Abort can race inside the math-ready callback too.
-        if (signal.aborted) return resolve();
+        if (signal.aborted) return finish();
         container.innerHTML = updatedHtml;
 
-        if (signal.aborted) return resolve();
+        if (signal.aborted) return finish();
         enhanceCodeBlocks(container);
 
-        resolve();
+        finish();
       };
-      signal.addEventListener('abort', () => resolve(), { once: true });
-      window.addEventListener(MATH_READY_EVENT, handleMathReady, { once: true, signal });
+
+      const timeout = window.setTimeout(finish, 2000);
+
+      signal.addEventListener('abort', onAbort, { once: true });
+      window.addEventListener(MATH_READY_EVENT, onMathReady, { once: true });
+
+      if (signal.aborted) finish();
     });
   }
 
