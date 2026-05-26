@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import {
   THEMES,
   renderDocument,
@@ -54,7 +54,7 @@ export function Viewer() {
     return () => window.removeEventListener('message', handler);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!contentRef.current || !markdown) return;
     const themeObj = THEMES.find((t) => t.id === theme) ?? THEMES[0]!;
     const ac = new AbortController();
