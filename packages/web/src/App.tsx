@@ -532,17 +532,15 @@ export function App() {
     const ac = new AbortController();
     const container = contentRef.current;
 
-    void (async () => {
-      try {
-        await renderDocument(container, doc.markdown, themeObj, ac.signal);
-      } catch (err) {
+    void renderDocument(container, doc.markdown, themeObj, ac.signal)
+      .catch((err) => {
         if (ac.signal.aborted) return;
         console.error('Doclume: renderDocument failed', err);
         container.innerHTML = '<p><strong>Render failed.</strong> Check browser console for details.</p>';
-      } finally {
+      })
+      .finally(() => {
         if (!ac.signal.aborted) bumpRenderVersion();
-      }
-    })();
+      });
 
     return () => ac.abort();
   }, [doc.markdown, theme]);
