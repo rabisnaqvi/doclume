@@ -9,7 +9,6 @@ interface Stats {
 }
 
 interface ReaderPaneProps {
-  renderedHtml: string;
   theme: ThemeId;
   stats: Stats;
   docName: string;
@@ -52,7 +51,7 @@ function Rail({ stats, theme }: { stats: Stats; theme: ThemeId }) {
 }
 
 function ReaderPaneImpl({
-  renderedHtml, theme, stats, docName, focusMode, showRail,
+  theme, stats, docName, focusMode, showRail,
   tocTriggerVisible = false, onShowToc, contentRef,
 }: ReaderPaneProps) {
   return (
@@ -84,7 +83,7 @@ function ReaderPaneImpl({
             </div>
           </div>
         )}
-        <article ref={contentRef} className="markdown" dangerouslySetInnerHTML={{ __html: renderedHtml }} />
+        <article ref={contentRef} className="markdown" />
       </main>
       {!focusMode && showRail && <Rail stats={stats} theme={theme} />}
     </>

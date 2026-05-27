@@ -132,6 +132,7 @@ async function ensureKatex(): Promise<KatexRuntime> {
       return runtime;
     }).catch((error) => {
       katexPromise = null;
+      notifyMathReady();
       throw error;
     });
   }
