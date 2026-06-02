@@ -13,6 +13,7 @@ export type {
   TocEntry,
   DocState,
   ReadingStats,
+  DocumentRenderResult,
   Prefs,
   WebviewMessage,
   HostMessage,

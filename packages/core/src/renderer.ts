@@ -1,17 +1,18 @@
 import { renderMarkdownWithMeta, MATH_READY_EVENT } from './markdown.js';
 import { renderMermaidDiagrams } from './mermaid.js';
 import { enhanceCodeBlocks } from './code-blocks.js';
-import type { Theme } from './types.js';
+import { estimateReadingTime } from './stats.js';
+import type { Theme, DocumentRenderResult } from './types.js';
 
 export async function renderDocument(
   container: Element,
   markdown: string,
   theme: Theme,
   signal: AbortSignal,
-): Promise<void> {
+): Promise<DocumentRenderResult | undefined> {
   if (signal.aborted) return;
 
-  const { html } = renderMarkdownWithMeta(markdown);
+  const { html, toc } = renderMarkdownWithMeta(markdown);
 
   // Abort can race between the initial guard and DOM mutation.
   if (signal.aborted) return;
@@ -95,4 +96,12 @@ export async function renderDocument(
 
     await renderMermaidDiagrams(container, theme.mermaidTheme, { signal });
   }
+
+  if (signal.aborted) return;
+
+  return {
+    html: container.innerHTML,
+    toc,
+    stats: estimateReadingTime(markdown),
+  };
 }

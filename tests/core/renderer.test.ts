@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderDocument, THEMES } from '@doclume/core';
-import type { Theme } from '@doclume/core';
+import type { Theme, DocumentRenderResult } from '@doclume/core';
 
 const light = THEMES.find((t) => t.id === 'manual')! as Theme;
 
@@ -16,10 +16,20 @@ describe('renderDocument', () => {
     container.remove();
   });
 
-  it('injects rendered HTML for a heading', async () => {
+  it('returns html, toc, and stats while hydrating the root', async () => {
     const ac = new AbortController();
-    await renderDocument(container, '# Hello World', light, ac.signal);
+    const result = await renderDocument(container, '# Hello World\n\n## Subhead', light, ac.signal);
+
+    expect(result).toEqual<DocumentRenderResult>(expect.objectContaining({
+      html: expect.stringContaining('<h1 id="hello-world">Hello World</h1>'),
+      toc: [
+        { id: 'hello-world', level: 1, text: 'Hello World' },
+        { id: 'subhead', level: 2, text: 'Subhead' },
+      ],
+      stats: { words: 5, minutes: 1 },
+    }));
     expect(container.querySelector('h1')?.textContent).toBe('Hello World');
+    expect(container.querySelector('h2')?.textContent).toBe('Subhead');
   });
 
   it('renders a paragraph', async () => {
@@ -44,7 +54,11 @@ describe('renderDocument', () => {
 
   it('renders empty string without throwing', async () => {
     const ac = new AbortController();
-    await expect(renderDocument(container, '', light, ac.signal)).resolves.toBeUndefined();
+    await expect(renderDocument(container, '', light, ac.signal)).resolves.toEqual({
+      html: '',
+      toc: [],
+      stats: { words: 0, minutes: 1 },
+    });
   });
 
   it('falls back when requestAnimationFrame is unavailable', async () => {
@@ -54,7 +68,11 @@ describe('renderDocument', () => {
 
     try {
       const ac = new AbortController();
-      await expect(renderDocument(container, '# Hello World', light, ac.signal)).resolves.toBeUndefined();
+      await expect(renderDocument(container, '# Hello World', light, ac.signal)).resolves.toMatchObject({
+        html: expect.stringContaining('<h1 id="hello-world">Hello World</h1>'),
+        toc: [{ id: 'hello-world', level: 1, text: 'Hello World' }],
+        stats: { words: 3, minutes: 1 },
+      });
       expect(container.querySelector('h1')?.textContent).toBe('Hello World');
     } finally {
       vi.unstubAllGlobals();

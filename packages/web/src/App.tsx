@@ -2,12 +2,11 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffe
 import {
   THEMES,
   renderDocument,
-  extractToc,
-  estimateReadingTime,
   type Theme,
   type ThemeId,
   type DocState,
   type Prefs,
+  type DocumentRenderResult,
 } from '@doclume/core';
 import '@doclume/core/css/themes.css';
 import '@doclume/core/css/markdown.css';
@@ -505,6 +504,7 @@ export function App() {
   const [searchCount, setSearchCount] = useState(0);
   const [searchIndex, setSearchIndex] = useState(-1);
   const [renderVersion, bumpRenderVersion] = useReducer((v: number) => v + 1, 0);
+  const [renderResult, setRenderResult] = useState<DocumentRenderResult | null>(null);
   const searchMatchesRef = useRef<HTMLElement[]>([]);
   const [activeId, setActiveId] = useState('');
   const contentRef = useRef<HTMLElement>(null);
@@ -521,18 +521,26 @@ export function App() {
     savePrefs({ ...prefs, theme, sidebarCollapsed });
   }, [theme, sidebarCollapsed]);
 
-  const toc = useMemo(() => {
-    if (!doc.markdown) return [];
-    return extractToc(doc.markdown);
-  }, [doc.markdown]);
+  const toc = renderResult?.toc ?? [];
+  const tocSignature = useMemo(
+    () => toc.map(({ id, level, text }) => `${level}:${id}:${text}`).join('|'),
+    [toc],
+  );
 
   useLayoutEffect(() => {
-    if (!contentRef.current || !doc.markdown) return;
+    if (!contentRef.current || !doc.markdown) {
+      setRenderResult(null);
+      return;
+    }
     const themeObj = THEMES.find((t) => t.id === theme) ?? THEMES[0]!;
     const ac = new AbortController();
     const container = contentRef.current;
 
     void renderDocument(container, doc.markdown, themeObj, ac.signal)
+      .then((result) => {
+        if (ac.signal.aborted || !result) return;
+        setRenderResult(result);
+      })
       .catch((err) => {
         if (ac.signal.aborted) return;
         console.error('Doclume: renderDocument failed', err);
@@ -552,7 +560,7 @@ export function App() {
     setSearchIndex(-1);
     if (searchQuery) setSearchQuery('');
     if (doc.markdown) saveLastDoc(doc);
-  }, [doc.markdown, toc]);
+  }, [doc.markdown, tocSignature]);
 
   useEffect(() => {
     if (!contentRef.current) return;
@@ -694,9 +702,9 @@ export function App() {
   }, [searchCount]);
 
   const stats = useMemo(() => {
-    const r = estimateReadingTime(doc.markdown);
+    const r = renderResult?.stats ?? { words: 0, minutes: 1 };
     return { ...r, headings: toc.length };
-  }, [doc.markdown, toc]);
+  }, [renderResult, toc]);
 
   const showSidebar = !focusMode && toc.length > 0 && !sidebarCollapsed;
   const body = doc.markdown ? (
