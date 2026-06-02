@@ -522,16 +522,15 @@ export function App() {
   }, [theme, sidebarCollapsed]);
 
   const toc = renderResult?.toc ?? [];
-  const tocSignature = useMemo(
-    () => toc.map(({ id, level, text }) => `${level}:${id}:${text}`).join('|'),
-    [toc],
-  );
 
   useLayoutEffect(() => {
-    if (!contentRef.current || !doc.markdown) {
+    if (!contentRef.current) return;
+    if (!doc.markdown) {
       setRenderResult(null);
       return;
     }
+
+    setRenderResult(null);
     const themeObj = THEMES.find((t) => t.id === theme) ?? THEMES[0]!;
     const ac = new AbortController();
     const container = contentRef.current;
@@ -543,6 +542,7 @@ export function App() {
       })
       .catch((err) => {
         if (ac.signal.aborted) return;
+        setRenderResult(null);
         console.error('Doclume: renderDocument failed', err);
         container.innerHTML = '<p><strong>Render failed.</strong> Check browser console for details.</p>';
       })
@@ -571,7 +571,7 @@ export function App() {
     setActiveId((current) => (
       current && toc.some((item) => item.id === current) ? current : toc[0]!.id
     ));
-  }, [tocSignature]);
+  }, [toc]);
 
   useEffect(() => {
     if (!contentRef.current) return;
