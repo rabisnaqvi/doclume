@@ -109,4 +109,14 @@ describe('renderDocument', () => {
     expect(container.querySelector('.katex')).not.toBeNull();
   });
 
+  it('returns toc that matches final DOM after math-ready rerender', async () => {
+    const ac = new AbortController();
+    const result = await renderDocument(container, '# Heading with $x^2$', light, ac.signal);
+
+    expect(result?.toc[0]).toEqual(expect.objectContaining({
+      level: 1,
+    }));
+    expect(result?.toc[0]?.text).toBe(container.querySelector('h1')?.textContent);
+  });
+
 });

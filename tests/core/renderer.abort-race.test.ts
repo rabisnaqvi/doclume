@@ -18,6 +18,7 @@ vi.mock('../../packages/core/src/markdown.js', () => {
       // Call 2: math-ready rerender
       return { html: '<p>updated</p>' };
     },
+    extractToc: () => [],
   };
 });
 

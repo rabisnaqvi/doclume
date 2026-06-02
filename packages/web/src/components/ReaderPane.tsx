@@ -107,13 +107,13 @@ function ReaderPaneImpl({
           </div>
         )}
         <div className={`reader__content${isLoading ? ' reader__content--loading' : ''}`} aria-busy={isLoading || undefined}>
-          <div className={`markdown-skeleton${isLoading ? '' : ' markdown-skeleton--hidden'}`} aria-hidden="true">
-            <div className="markdown-skeleton__line markdown-skeleton__line--title" />
-            <div className="markdown-skeleton__line" />
-            <div className="markdown-skeleton__line markdown-skeleton__line--wide" />
-            <div className="markdown-skeleton__line" />
-            <div className="markdown-skeleton__line markdown-skeleton__line--wide" />
-            <div className="markdown-skeleton__line markdown-skeleton__line--narrow" />
+          <div className={`skeleton markdown-skeleton${isLoading ? '' : ' markdown-skeleton--hidden'}`} aria-hidden="true">
+            <div className="skeleton markdown-skeleton__line markdown-skeleton__line--title" />
+            <div className="skeleton markdown-skeleton__line" />
+            <div className="skeleton markdown-skeleton__line markdown-skeleton__line--wide" />
+            <div className="skeleton markdown-skeleton__line" />
+            <div className="skeleton markdown-skeleton__line markdown-skeleton__line--wide" />
+            <div className="skeleton markdown-skeleton__line markdown-skeleton__line--narrow" />
           </div>
           <article ref={contentRef} className="markdown" />
         </div>

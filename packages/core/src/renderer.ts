@@ -1,4 +1,4 @@
-import { renderMarkdownWithMeta, MATH_READY_EVENT } from './markdown.js';
+import { renderMarkdownWithMeta, MATH_READY_EVENT, extractToc } from './markdown.js';
 import { renderMermaidDiagrams } from './mermaid.js';
 import { enhanceCodeBlocks } from './code-blocks.js';
 import { estimateReadingTime } from './stats.js';
@@ -12,7 +12,7 @@ export async function renderDocument(
 ): Promise<DocumentRenderResult | undefined> {
   if (signal.aborted) return;
 
-  const { html, toc } = renderMarkdownWithMeta(markdown);
+  const { html } = renderMarkdownWithMeta(markdown);
 
   // Abort can race between the initial guard and DOM mutation.
   if (signal.aborted) return;
@@ -21,6 +21,7 @@ export async function renderDocument(
   // DOM enhancement mutates the container as well.
   if (signal.aborted) return;
   enhanceCodeBlocks(container);
+  let toc = extractToc(container);
 
   const view = container.ownerDocument?.defaultView ?? (typeof window !== 'undefined' ? window : undefined);
 
@@ -42,14 +43,15 @@ export async function renderDocument(
       const onMathReady = (_event: Event): void => {
         if (signal.aborted) return finish();
 
-        const { html: updatedHtml } = renderMarkdownWithMeta(markdown);
+        const updated = renderMarkdownWithMeta(markdown);
 
         // Abort can race inside the math-ready callback too.
         if (signal.aborted) return finish();
-        container.innerHTML = updatedHtml;
+        container.innerHTML = updated.html;
 
         if (signal.aborted) return finish();
         enhanceCodeBlocks(container);
+        toc = extractToc(container);
 
         finish();
       };

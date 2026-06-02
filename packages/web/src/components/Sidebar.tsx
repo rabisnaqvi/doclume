@@ -28,7 +28,7 @@ function SidebarImpl({ toc, activeId, onJump, onCollapse, stackedToc, isLoading 
       {isLoading ? (
         <div className="toc toc--loading" aria-hidden="true">
           {Array.from({ length: 5 }, (_, i) => (
-            <div className={`toc__skeleton toc__skeleton--${(i % 3) + 1}`} key={i} />
+            <div className={`skeleton toc__skeleton toc__skeleton--${(i % 3) + 1}`} key={i} />
           ))}
         </div>
       ) : (
