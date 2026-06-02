@@ -554,13 +554,24 @@ export function App() {
   }, [doc.markdown, theme]);
 
   useEffect(() => {
-    setActiveId(toc[0]?.id ?? '');
+    setActiveId('');
     searchMatchesRef.current = [];
     setSearchCount(0);
     setSearchIndex(-1);
     if (searchQuery) setSearchQuery('');
     if (doc.markdown) saveLastDoc(doc);
-  }, [doc.markdown, tocSignature]);
+  }, [doc.markdown]);
+
+  useEffect(() => {
+    if (!toc.length) {
+      setActiveId('');
+      return;
+    }
+
+    setActiveId((current) => (
+      current && toc.some((item) => item.id === current) ? current : toc[0]!.id
+    ));
+  }, [tocSignature]);
 
   useEffect(() => {
     if (!contentRef.current) return;
