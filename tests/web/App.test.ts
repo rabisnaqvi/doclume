@@ -4,15 +4,14 @@ import { act } from 'react-dom/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../packages/web/src/App';
 
-const { renderDocument, resolveRender } = vi.hoisted(() => {
-  let resolveRender!: (value: any) => void;
-  const renderPending = new Promise((resolve) => {
-    resolveRender = resolve;
-  });
+const { renderDocument, renderPending } = vi.hoisted(() => {
+  const renderPending: { resolve?: (value: any) => void } = {};
 
   return {
-    renderDocument: vi.fn(() => renderPending),
-    resolveRender,
+    renderDocument: vi.fn(() => new Promise((resolve) => {
+      renderPending.resolve = resolve;
+    })),
+    renderPending,
   };
 });
 
@@ -81,7 +80,7 @@ describe('App', () => {
     expect(host.querySelector('.markdown-skeleton')).not.toBeNull();
     expect(host.querySelector('.empty')).toBeNull();
 
-    resolveRender({ html: '<h1 id="hello-world">Hello World</h1>', toc: [{ id: 'hello-world', level: 1, text: 'Hello World' }], stats: { words: 2, minutes: 1 } });
+    renderPending.resolve?.({ html: '<h1 id="hello-world">Hello World</h1>', toc: [{ id: 'hello-world', level: 1, text: 'Hello World' }], stats: { words: 2, minutes: 1 } });
     await vi.waitFor(() => expect(host.querySelector('.sidebar--loading')).toBeNull());
     expect(host.querySelector('.toc__link')?.textContent).toBe('Hello World');
     expect(host.querySelector('.reader__header__stats-row')?.textContent).toContain('1 min read');

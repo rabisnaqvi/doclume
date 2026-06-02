@@ -11,6 +11,7 @@ Monorepo releases use one version across the repo root, `@doclume/core`, `@doclu
 
 ### Fixed
 - Removed first-paint theme flash and reader shell restructuring by applying the saved theme before boot and keeping loading chrome stable while documents render.
+- Heading dividers no longer stack with adjacent horizontal rules in rendered markdown.
 
 ## [0.3.0] - 2026-05-24
 

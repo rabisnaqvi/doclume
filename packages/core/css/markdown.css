@@ -1169,6 +1169,20 @@ html[data-theme='contrast'] .markdown a:hover {
   padding: 0 0.1em;
 }
 
+/* Headings directly after a horizontal rule should not render a second divider. */
+.markdown hr + :is(h1, h2, h3, h4, h5, h6) {
+  border-top: 0 !important;
+  border-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+html[data-theme='library'] .markdown hr + h2::before,
+html[data-theme='lamplight'] .markdown hr + h2::before {
+  content: none !important;
+  display: none !important;
+}
+
 /* Mermaid per-theme container backgrounds */
 html[data-theme='library'] .markdown .mermaid {
   background: #ffffff;
