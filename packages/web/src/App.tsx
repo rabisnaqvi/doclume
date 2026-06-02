@@ -526,7 +526,7 @@ export function App() {
     return extractToc(doc.markdown);
   }, [doc.markdown]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!contentRef.current || !doc.markdown) return;
     const themeObj = THEMES.find((t) => t.id === theme) ?? THEMES[0]!;
     const ac = new AbortController();
