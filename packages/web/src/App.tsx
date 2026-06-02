@@ -632,7 +632,7 @@ export function App() {
 
     headingEls.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, [toc, renderVersion]);
+  }, [toc]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
