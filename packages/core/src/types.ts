@@ -10,6 +10,8 @@ export interface Theme {
   swatchAccent: string;
   fontPreview: string;
   letter: string;
+  mermaidTheme: 'dark' | 'neutral';
+  isDark: boolean;
 }
 
 export interface TocEntry {

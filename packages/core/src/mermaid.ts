@@ -1,4 +1,3 @@
-import type { ThemeId } from './types.js';
 import { sanitizeMermaidSvg } from './sanitize.js';
 
 let mermaidBootstrap: Promise<void> | null = null;
@@ -10,10 +9,6 @@ async function ensureMermaidBootstrap(mermaid: { parse: (code: string) => Promis
       .then(() => undefined, () => undefined);
   }
   await mermaidBootstrap;
-}
-
-export function getMermaidTheme(theme: ThemeId): 'dark' | 'neutral' {
-  return (theme === 'lamplight' || theme === 'console' || theme === 'contrast') ? 'dark' : 'neutral';
 }
 
 export interface RenderMermaidOptions {
@@ -38,12 +33,22 @@ type MermaidRuntime = {
   render: (id: string, code: string) => Promise<{ svg: string }>;
 };
 
+function getRootDocument(root: ParentNode | null | undefined): Document | null {
+  if (!root) return null;
+  if ('defaultView' in root) return root as Document;
+  return root.ownerDocument ?? null;
+}
+
 /** Render `.mermaid` placeholders under `root` (dynamic import; safe in browser/webview only). */
 export async function renderMermaidDiagrams(
   root: ParentNode | null | undefined,
-  theme: ThemeId,
+  mermaidTheme: 'dark' | 'neutral',
   options?: RenderMermaidOptions,
 ): Promise<void> {
+  const doc = getRootDocument(root);
+  const view = doc?.defaultView ?? null;
+  if (!doc || !view) return;
+
   const nodes = Array.from(root?.querySelectorAll<HTMLElement>('.mermaid') ?? []);
   if (!nodes.length) return;
 
@@ -65,9 +70,9 @@ export async function renderMermaidDiagrams(
   const cleanup = (): void => {
     if (cleanedUp) return;
     cleanedUp = true;
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    doc.removeEventListener('visibilitychange', handleVisibilityChange);
     if (recheckHandle !== undefined) {
-      window.cancelAnimationFrame(recheckHandle);
+      view.cancelAnimationFrame(recheckHandle);
       recheckHandle = undefined;
     }
     recheckQueue.clear();
@@ -98,7 +103,7 @@ export async function renderMermaidDiagrams(
         if (!initialized) {
           mermaid.initialize({
             startOnLoad: false,
-            theme: getMermaidTheme(theme),
+            theme: mermaidTheme,
             securityLevel: 'strict',
             htmlLabels: false,
           });
@@ -147,7 +152,7 @@ export async function renderMermaidDiagrams(
       return 'failed';
     } finally {
       if (renderId) {
-        document.getElementById(`d${renderId}`)?.remove();
+        doc.getElementById(`d${renderId}`)?.remove();
       }
       inFlight.delete(node);
     }
@@ -167,7 +172,7 @@ export async function renderMermaidDiagrams(
       recheckQueue.add(node);
     }
     if (recheckHandle !== undefined) return;
-    recheckHandle = window.requestAnimationFrame(() => {
+    recheckHandle = view.requestAnimationFrame(() => {
       recheckHandle = undefined;
       const queued = Array.from(recheckQueue);
       recheckQueue.clear();
@@ -181,8 +186,8 @@ export async function renderMermaidDiagrams(
     });
   };
 
-  if (typeof IntersectionObserver === 'function') {
-    observer = new IntersectionObserver((entries) => {
+  if (typeof view.IntersectionObserver === 'function') {
+    observer = new view.IntersectionObserver((entries) => {
       void Promise.all(entries.map(async (entry) => {
         if (!entry.isIntersecting) return;
         const result = await renderOne(entry.target as HTMLElement);
@@ -194,14 +199,14 @@ export async function renderMermaidDiagrams(
     });
   }
 
-  if (typeof ResizeObserver === 'function') {
-    resizeObserver = new ResizeObserver(handleResize);
+  if (typeof view.ResizeObserver === 'function') {
+    resizeObserver = new view.ResizeObserver(handleResize);
     for (const node of nodes) {
       resizeObserver.observe(node);
     }
   }
 
-  document.addEventListener('visibilitychange', handleVisibilityChange);
+  doc.addEventListener('visibilitychange', handleVisibilityChange);
   options?.signal?.addEventListener('abort', cleanup, { once: true });
 
   for (const node of nodes) {

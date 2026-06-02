@@ -1,12 +1,7 @@
-import { useState, useEffect, useRef, useReducer, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import {
-  configureMarked,
-  renderMarkdown,
-  renderMermaidDiagrams,
-  enhanceCodeBlocks,
-  runAbortableTask,
-  subscribeWindowEvent,
-  MATH_READY_EVENT,
+  THEMES,
+  renderDocument,
   type ThemeId,
   type WebviewMessage,
   type HostMessage,
@@ -34,12 +29,9 @@ export function Viewer() {
 
   const [markdown, setMarkdown] = useState(init?.markdown ?? '');
   const [theme, setTheme] = useState<ThemeId>(init?.theme ?? 'manual');
-  const [mathVersion, bumpMathVersion] = useReducer((v: number) => v + 1, 0);
   const contentRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    configureMarked();
-
     // Apply initial theme to <html> (extension also sets data-theme on the element,
     // but doing it here avoids a flash if init data is present).
     if (init?.theme) document.documentElement.dataset.theme = init.theme;
@@ -62,17 +54,20 @@ export function Viewer() {
     return () => window.removeEventListener('message', handler);
   }, []);
 
-  useEffect(() => subscribeWindowEvent(MATH_READY_EVENT, () => bumpMathVersion()), []);
+  useLayoutEffect(() => {
+    if (!contentRef.current || !markdown) return;
+    const themeObj = THEMES.find((t) => t.id === theme) ?? THEMES[0]!;
+    const ac = new AbortController();
+    const container = contentRef.current;
 
-  const renderedHtml = useMemo(() => (markdown ? renderMarkdown(markdown) : ''), [markdown, mathVersion]);
+    void renderDocument(container, markdown, themeObj, ac.signal).catch((err) => {
+      if (ac.signal.aborted) return;
+      console.error('Doclume: renderDocument failed', err);
+      container.innerHTML = '<p><strong>Render failed.</strong> Open Developer Tools console for details.</p>';
+    });
 
-  useEffect(() => runAbortableTask((signal) => {
-    void renderMermaidDiagrams(contentRef.current, theme, { signal });
-  }), [renderedHtml, theme]);
-
-  useEffect(() => {
-    enhanceCodeBlocks(contentRef.current);
-  }, [renderedHtml]);
+    return () => ac.abort();
+  }, [markdown, theme]);
 
   if (!markdown) {
     return (
@@ -87,7 +82,6 @@ export function Viewer() {
       <article
         ref={contentRef}
         className="markdown"
-        dangerouslySetInnerHTML={{ __html: renderedHtml }}
       />
     </div>
   );
