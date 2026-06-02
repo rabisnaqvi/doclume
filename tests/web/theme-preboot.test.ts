@@ -51,4 +51,10 @@ describe('theme preboot', () => {
     runPreboot();
     expect(document.documentElement.dataset.theme).toBe('lamplight');
   });
+
+  it('rejects invalid stored theme ids', () => {
+    window.localStorage.setItem('doclume-prefs-v1', JSON.stringify({ theme: 'bogus-theme' }));
+    runPreboot();
+    expect(document.documentElement.dataset.theme).toBe('library');
+  });
 });

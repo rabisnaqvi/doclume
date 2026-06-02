@@ -14,8 +14,9 @@
   try {
     const raw = window.localStorage.getItem('doclume-prefs-v1');
     const prefs = raw ? JSON.parse(raw) : null;
-    const theme = migrate[prefs?.theme] ?? prefs?.theme ?? fallback;
-    document.documentElement.dataset.theme = theme;
+    const theme = migrate[prefs?.theme] ?? prefs?.theme;
+    const allowed = new Set(['library', 'lamplight', 'manual', 'console', 'contrast']);
+    document.documentElement.dataset.theme = allowed.has(theme) ? theme : fallback;
   } catch {
     document.documentElement.dataset.theme = fallback;
   }
