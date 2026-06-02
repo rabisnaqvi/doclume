@@ -492,7 +492,7 @@ function PasteModal({ open, onClose, onRender }: { open: boolean; onClose: () =>
 /* ---------- App ---------- */
 
 export function App() {
-  const [doc, setDoc] = useState<DocState>({ markdown: '', name: '' });
+  const [doc, setDoc] = useState<DocState>(() => loadLastDoc() ?? { markdown: '', name: '' });
   const [theme, setTheme] = useState<ThemeId>(() => readStoredTheme() ?? preferredThemeFromBrowserScheme());
   const [focusMode, setFocusMode] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
@@ -504,16 +504,12 @@ export function App() {
   const [searchCount, setSearchCount] = useState(0);
   const [searchIndex, setSearchIndex] = useState(-1);
   const [renderVersion, bumpRenderVersion] = useReducer((v: number) => v + 1, 0);
+  const [isRendering, setIsRendering] = useState(false);
   const [renderResult, setRenderResult] = useState<DocumentRenderResult | null>(null);
   const searchMatchesRef = useRef<HTMLElement[]>([]);
   const [activeId, setActiveId] = useState('');
   const contentRef = useRef<HTMLElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const last = loadLastDoc();
-    if (last?.markdown) setDoc({ markdown: last.markdown, name: last.name ?? '' });
-  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -526,10 +522,12 @@ export function App() {
   useLayoutEffect(() => {
     if (!contentRef.current) return;
     if (!doc.markdown) {
+      setIsRendering(false);
       setRenderResult(null);
       return;
     }
 
+    setIsRendering(true);
     setRenderResult(null);
     const themeObj = THEMES.find((t) => t.id === theme) ?? THEMES[0]!;
     const ac = new AbortController();
@@ -547,7 +545,9 @@ export function App() {
         container.innerHTML = '<p><strong>Render failed.</strong> Check browser console for details.</p>';
       })
       .finally(() => {
-        if (!ac.signal.aborted) bumpRenderVersion();
+        if (ac.signal.aborted) return;
+        setIsRendering(false);
+        bumpRenderVersion();
       });
 
     return () => ac.abort();
@@ -717,9 +717,11 @@ export function App() {
     return { ...r, headings: toc.length };
   }, [renderResult, toc]);
 
-  const showSidebar = !focusMode && toc.length > 0 && !sidebarCollapsed;
-  const body = doc.markdown ? (
-    <div className={`workspace ${!showSidebar ? 'workspace--no-toc' : ''}`}>
+  const hasDocument = Boolean(doc.markdown);
+  const isLoading = hasDocument && isRendering;
+  const showSidebar = !focusMode && (isLoading || (toc.length > 0 && !sidebarCollapsed));
+  const body = hasDocument || isLoading ? (
+    <div className={`workspace ${!showSidebar && !isLoading ? 'workspace--no-toc' : ''}`}>
       {showSidebar && (
         <Sidebar
           toc={toc}
@@ -727,9 +729,10 @@ export function App() {
           onJump={jumpToHeading}
           onCollapse={() => setSidebarCollapsed(true)}
           stackedToc={stackedTocLayout}
+          isLoading={isLoading}
         />
       )}
-      {!showSidebar && toc.length > 0 && !focusMode && !stackedTocLayout && (
+      {!isLoading && !showSidebar && toc.length > 0 && !focusMode && !stackedTocLayout && (
         <SidebarRail onExpand={() => setSidebarCollapsed(false)} />
       )}
       <ReaderPane
@@ -737,7 +740,8 @@ export function App() {
         stats={stats}
         docName={doc.name}
         focusMode={focusMode}
-        showRail={!focusMode && showSidebar}
+        showRail={!focusMode && (showSidebar || isLoading)}
+        isLoading={isLoading}
         tocTriggerVisible={stackedTocLayout && sidebarCollapsed && toc.length > 0}
         onShowToc={() => setSidebarCollapsed(false)}
         contentRef={contentRef}
@@ -749,11 +753,11 @@ export function App() {
     <>
       <DocumentShell
         focusMode={focusMode}
-        hasDocument={Boolean(doc.markdown)}
+        hasDocument={hasDocument}
         topbar={
           <Topbar
             docName={doc.name}
-            hasDocument={Boolean(doc.markdown)}
+            hasDocument={hasDocument}
             theme={theme}
             onTheme={setTheme}
             onOpen={() => fileInputRef.current?.click()}

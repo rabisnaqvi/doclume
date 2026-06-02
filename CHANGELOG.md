@@ -9,6 +9,9 @@ Monorepo releases use one version across the repo root, `@doclume/core`, `@doclu
 
 ## [Unreleased]
 
+### Fixed
+- Removed first-paint theme flash and reader shell restructuring by applying the saved theme before boot and keeping loading chrome stable while documents render.
+
 ## [0.3.0] - 2026-05-24
 
 ### Added

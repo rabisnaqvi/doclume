@@ -9,33 +9,44 @@ interface SidebarProps {
   onCollapse: () => void;
   /** Stacked: TOC above content — collapse chevron points up */
   stackedToc: boolean;
+  isLoading?: boolean;
 }
 
-function SidebarImpl({ toc, activeId, onJump, onCollapse, stackedToc }: SidebarProps) {
-  if (!toc.length) return null;
+function SidebarImpl({ toc, activeId, onJump, onCollapse, stackedToc, isLoading = false }: SidebarProps) {
+  if (!toc.length && !isLoading) return null;
   const collapseIcon = stackedToc ? 'chevronUp' : 'chevronLeft';
   return (
-    <aside className="sidebar" aria-label="Table of contents">
+    <aside className={`sidebar${isLoading ? ' sidebar--loading' : ''}`} aria-label="Table of contents" aria-busy={isLoading || undefined}>
       <div className="sidebar__head">
-        <p className="sidebar__eyebrow">Contents</p>
-        <button type="button" className="sidebar__collapse" onClick={onCollapse} title="Hide contents" aria-label="Hide contents">
-          <Icon name={collapseIcon} size={14} />
-        </button>
+        <p className="sidebar__eyebrow">{isLoading ? <span className="skeleton skeleton--text skeleton--eyebrow" /> : 'Contents'}</p>
+        {!isLoading && (
+          <button type="button" className="sidebar__collapse" onClick={onCollapse} title="Hide contents" aria-label="Hide contents">
+            <Icon name={collapseIcon} size={14} />
+          </button>
+        )}
       </div>
-      <ul className="toc">
-        {toc.map((item) => (
-          <li key={item.id} className={`toc__item toc__item--l${item.level}`}>
-            <a
-              className="toc__link"
-              href={`#${item.id}`}
-              data-active={item.id === activeId}
-              onClick={(e) => { e.preventDefault(); onJump(item.id); }}
-            >
-              {item.text}
-            </a>
-          </li>
-        ))}
-      </ul>
+      {isLoading ? (
+        <div className="toc toc--loading" aria-hidden="true">
+          {Array.from({ length: 5 }, (_, i) => (
+            <div className={`toc__skeleton toc__skeleton--${(i % 3) + 1}`} key={i} />
+          ))}
+        </div>
+      ) : (
+        <ul className="toc">
+          {toc.map((item) => (
+            <li key={item.id} className={`toc__item toc__item--l${item.level}`}>
+              <a
+                className="toc__link"
+                href={`#${item.id}`}
+                data-active={item.id === activeId}
+                onClick={(e) => { e.preventDefault(); onJump(item.id); }}
+              >
+                {item.text}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
     </aside>
   );
 }
