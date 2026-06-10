@@ -9,6 +9,8 @@ Monorepo releases use one version across the repo root, `@doclume/core`, `@doclu
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-06-10
+
 ### Fixed
 - Failed document renders now show a global error workspace instead of fake reading stats, with retry/open/paste recovery actions.
 - Removed first-paint theme flash and reader shell restructuring by applying the saved theme before boot and keeping loading chrome stable while documents render.
