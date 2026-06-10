@@ -2,8 +2,6 @@
 
 export { renderDocument } from './renderer.js';
 
-export { extractToc } from './markdown.js';
-export { estimateReadingTime } from './stats.js';
 export { bootstrapRoot } from './bootstrap.js';
 export { THEMES } from './themes.js';
 
@@ -12,7 +10,7 @@ export type {
   Theme,
   TocEntry,
   DocState,
-  ReadingStats,
+  DocumentRenderResult,
   Prefs,
   WebviewMessage,
   HostMessage,

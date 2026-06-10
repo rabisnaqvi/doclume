@@ -99,6 +99,36 @@ test('renders Mermaid on first open', async ({ page }) => {
   });
 });
 
+test('does not double-divider headings after horizontal rules', async ({ page }) => {
+  await page.addInitScript((markdown) => {
+    localStorage.setItem('doclume-prefs-v1', JSON.stringify({ theme: 'manual' }));
+    localStorage.setItem('doclume-last-doc-v1', JSON.stringify({ markdown, name: 'divider.md' }));
+  }, `# CARE GitLab-based code review workflow
+
+**Date:** 2026-06-02  
+**Status:** Draft  
+**Scope:** CARE workflow only
+
+---
+
+## Goal
+
+Move the CARE \`code-review\` stage from Jira comments to GitLab MR comments.`);
+
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+
+  const article = page.locator('article.markdown');
+  const goal = article.locator('h2').filter({ hasText: 'Goal' }).first();
+
+  await expect(article.locator('hr')).toHaveCount(1);
+  await expect(goal).toBeVisible();
+  expect(await goal.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { borderTopWidth: style.borderTopWidth, borderBottomWidth: style.borderBottomWidth };
+  })).toEqual({ borderTopWidth: '0px', borderBottomWidth: '0px' });
+});
+
 test('loads the sample document', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => {

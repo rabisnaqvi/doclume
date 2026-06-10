@@ -2,12 +2,11 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffe
 import {
   THEMES,
   renderDocument,
-  extractToc,
-  estimateReadingTime,
   type Theme,
   type ThemeId,
   type DocState,
   type Prefs,
+  type DocumentRenderResult,
 } from '@doclume/core';
 import '@doclume/core/css/themes.css';
 import '@doclume/core/css/markdown.css';
@@ -434,6 +433,38 @@ function EmptyState({ onOpen, onPaste, onSample }: { onOpen: () => void; onPaste
   );
 }
 
+function RenderErrorState({
+  error,
+  onRetry,
+  onOpen,
+  onPaste,
+}: {
+  error: string | null;
+  onRetry: () => void;
+  onOpen: () => void;
+  onPaste: () => void;
+}) {
+  return (
+    <div className="workspace-error" role="alert" aria-live="polite">
+      <h1 className="workspace-error__title">Render failed</h1>
+      <p className="workspace-error__text">
+        {error ? `${error}` : 'Doclume could not render this document.'}
+      </p>
+      <div className="workspace-error__actions">
+        <button type="button" className="btn btn--primary workspace-error__retry" onClick={onRetry}>
+          Try again
+        </button>
+        <button type="button" className="btn" onClick={onOpen}>
+          Open file
+        </button>
+        <button type="button" className="btn btn--ghost" onClick={onPaste}>
+          Paste markdown
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- Paste modal ---------- */
 
 function PasteModal({ open, onClose, onRender }: { open: boolean; onClose: () => void; onRender: (text: string) => void }) {
@@ -493,7 +524,7 @@ function PasteModal({ open, onClose, onRender }: { open: boolean; onClose: () =>
 /* ---------- App ---------- */
 
 export function App() {
-  const [doc, setDoc] = useState<DocState>({ markdown: '', name: '' });
+  const [doc, setDoc] = useState<DocState>(() => loadLastDoc() ?? { markdown: '', name: '' });
   const [theme, setTheme] = useState<ThemeId>(() => readStoredTheme() ?? preferredThemeFromBrowserScheme());
   const [focusMode, setFocusMode] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
@@ -505,15 +536,14 @@ export function App() {
   const [searchCount, setSearchCount] = useState(0);
   const [searchIndex, setSearchIndex] = useState(-1);
   const [renderVersion, bumpRenderVersion] = useReducer((v: number) => v + 1, 0);
+  const [renderRetryNonce, bumpRenderRetryNonce] = useReducer((v: number) => v + 1, 0);
+  const [renderStatus, setRenderStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [renderError, setRenderError] = useState<string | null>(null);
+  const [renderResult, setRenderResult] = useState<DocumentRenderResult | null>(null);
   const searchMatchesRef = useRef<HTMLElement[]>([]);
   const [activeId, setActiveId] = useState('');
   const contentRef = useRef<HTMLElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const last = loadLastDoc();
-    if (last?.markdown) setDoc({ markdown: last.markdown, name: last.name ?? '' });
-  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -521,38 +551,64 @@ export function App() {
     savePrefs({ ...prefs, theme, sidebarCollapsed });
   }, [theme, sidebarCollapsed]);
 
-  const toc = useMemo(() => {
-    if (!doc.markdown) return [];
-    return extractToc(doc.markdown);
-  }, [doc.markdown]);
+  const toc = renderResult?.toc ?? [];
 
   useLayoutEffect(() => {
-    if (!contentRef.current || !doc.markdown) return;
+    if (!contentRef.current) return;
+    if (!doc.markdown) {
+      setRenderStatus('idle');
+      setRenderError(null);
+      setRenderResult(null);
+      return;
+    }
+
+    setRenderStatus('loading');
+    setRenderError(null);
+    setRenderResult(null);
     const themeObj = THEMES.find((t) => t.id === theme) ?? THEMES[0]!;
     const ac = new AbortController();
     const container = contentRef.current;
 
     void renderDocument(container, doc.markdown, themeObj, ac.signal)
+      .then((result) => {
+        if (ac.signal.aborted || !result) return;
+        setRenderResult(result);
+        setRenderStatus('ready');
+      })
       .catch((err) => {
         if (ac.signal.aborted) return;
+        setRenderResult(null);
+        setRenderStatus('error');
+        setRenderError(err instanceof Error ? err.message : 'Render failed');
         console.error('Doclume: renderDocument failed', err);
-        container.innerHTML = '<p><strong>Render failed.</strong> Check browser console for details.</p>';
       })
       .finally(() => {
-        if (!ac.signal.aborted) bumpRenderVersion();
+        if (ac.signal.aborted) return;
+        bumpRenderVersion();
       });
 
     return () => ac.abort();
-  }, [doc.markdown, theme]);
+  }, [doc.markdown, theme, renderRetryNonce]);
 
   useEffect(() => {
-    setActiveId(toc[0]?.id ?? '');
+    setActiveId('');
     searchMatchesRef.current = [];
     setSearchCount(0);
     setSearchIndex(-1);
     if (searchQuery) setSearchQuery('');
     if (doc.markdown) saveLastDoc(doc);
-  }, [doc.markdown, toc]);
+  }, [doc.markdown]);
+
+  useEffect(() => {
+    if (!toc.length) {
+      setActiveId('');
+      return;
+    }
+
+    setActiveId((current) => (
+      current && toc.some((item) => item.id === current) ? current : toc[0]!.id
+    ));
+  }, [toc]);
 
   useEffect(() => {
     if (!contentRef.current) return;
@@ -613,7 +669,7 @@ export function App() {
 
     headingEls.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, [toc, renderVersion]);
+  }, [toc]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -694,13 +750,30 @@ export function App() {
   }, [searchCount]);
 
   const stats = useMemo(() => {
-    const r = estimateReadingTime(doc.markdown);
-    return { ...r, headings: toc.length };
-  }, [doc.markdown, toc]);
+    if (!renderResult) return null;
+    return { ...renderResult.stats, headings: toc.length };
+  }, [renderResult, toc]);
 
-  const showSidebar = !focusMode && toc.length > 0 && !sidebarCollapsed;
-  const body = doc.markdown ? (
-    <div className={`workspace ${!showSidebar ? 'workspace--no-toc' : ''}`}>
+  const hasDocument = Boolean(doc.markdown);
+  const isLoading = hasDocument && renderStatus === 'loading';
+  const showSidebar = !focusMode && (isLoading || (toc.length > 0 && !sidebarCollapsed));
+  const retryRender = useCallback(() => {
+    if (!doc.markdown) return;
+    setRenderStatus('loading');
+    setRenderError(null);
+    bumpRenderRetryNonce();
+  }, [doc.markdown]);
+  const body = renderStatus === 'error' ? (
+    <div className="workspace workspace--error">
+      <RenderErrorState
+        error={renderError}
+        onRetry={retryRender}
+        onOpen={() => fileInputRef.current?.click()}
+        onPaste={() => setPasteOpen(true)}
+      />
+    </div>
+  ) : hasDocument || isLoading ? (
+    <div className={`workspace ${!showSidebar && !isLoading ? 'workspace--no-toc' : ''}`}>
       {showSidebar && (
         <Sidebar
           toc={toc}
@@ -708,17 +781,19 @@ export function App() {
           onJump={jumpToHeading}
           onCollapse={() => setSidebarCollapsed(true)}
           stackedToc={stackedTocLayout}
+          isLoading={isLoading}
         />
       )}
-      {!showSidebar && toc.length > 0 && !focusMode && !stackedTocLayout && (
+      {!isLoading && !showSidebar && toc.length > 0 && !focusMode && !stackedTocLayout && (
         <SidebarRail onExpand={() => setSidebarCollapsed(false)} />
       )}
       <ReaderPane
         theme={theme}
-        stats={stats}
+        stats={stats ?? undefined}
         docName={doc.name}
         focusMode={focusMode}
-        showRail={!focusMode && showSidebar}
+        showRail={!focusMode && (showSidebar || isLoading)}
+        isLoading={isLoading}
         tocTriggerVisible={stackedTocLayout && sidebarCollapsed && toc.length > 0}
         onShowToc={() => setSidebarCollapsed(false)}
         contentRef={contentRef}
@@ -730,11 +805,11 @@ export function App() {
     <>
       <DocumentShell
         focusMode={focusMode}
-        hasDocument={Boolean(doc.markdown)}
+        hasDocument={hasDocument}
         topbar={
           <Topbar
             docName={doc.name}
-            hasDocument={Boolean(doc.markdown)}
+            hasDocument={hasDocument}
             theme={theme}
             onTheme={setTheme}
             onOpen={() => fileInputRef.current?.click()}

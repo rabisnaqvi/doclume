@@ -30,6 +30,12 @@ export interface ReadingStats {
   minutes: number;
 }
 
+export interface DocumentRenderResult {
+  html: string;
+  toc: TocEntry[];
+  stats: ReadingStats;
+}
+
 export interface Prefs {
   theme: ThemeId;
   sidebarCollapsed: boolean;

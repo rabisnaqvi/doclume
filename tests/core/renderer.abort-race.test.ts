@@ -18,6 +18,7 @@ vi.mock('../../packages/core/src/markdown.js', () => {
       // Call 2: math-ready rerender
       return { html: '<p>updated</p>' };
     },
+    extractToc: () => [],
   };
 });
 
@@ -32,7 +33,7 @@ describe('renderDocument abort race', () => {
     const ac = new AbortController();
     abortNow = () => ac.abort();
 
-    await renderDocument(container, '# ignored by mock', theme, ac.signal);
+    await expect(renderDocument(container, '# ignored by mock', theme, ac.signal)).resolves.toBeUndefined();
     expect(container.innerHTML).toBe('');
   });
 
@@ -53,7 +54,7 @@ describe('renderDocument abort race', () => {
     abortNow = () => ac.abort();
     window.dispatchEvent(new Event('doclume:math-ready'));
 
-    await renderPromise;
+    await expect(renderPromise).resolves.toBeUndefined();
 
     // Should still be initial HTML, not the updated one.
     expect(container.innerHTML).toBe('<span class="math-pending">pending</span>');

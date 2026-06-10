@@ -69,6 +69,11 @@ img { max-width: 100%; height: auto; display: block; }
 
 ::selection { background: var(--accent-soft); color: var(--text); }
 
+@keyframes skeleton-pulse {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
 /* =========================================================================
    Layout
    ========================================================================= */
@@ -426,6 +431,7 @@ a.btn:hover { border-bottom: none; }
   display: grid;
   grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(0, 220px);
   align-items: start;
+  min-height: 0;
   padding: 36px 28px 80px;
   gap: 32px;
   max-width: 1280px;
@@ -443,10 +449,54 @@ a.btn:hover { border-bottom: none; }
 
 .workspace--no-toc .reader { width: 100%; }
 
+.workspace--error {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: none;
+  justify-items: center;
+  min-height: calc(100vh - 180px);
+}
+
+.workspace-error {
+  width: min(640px, 100%);
+  margin-top: 28px;
+  display: grid;
+  gap: 16px;
+  padding: 28px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-2);
+  font-family: var(--ui-font);
+}
+
+.workspace-error__title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.workspace-error__text {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.55;
+}
+
+.workspace-error__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.workspace-error__retry {
+  min-width: 110px;
+}
+
 .sidebar {
   position: sticky;
   top: 84px;
   align-self: start;
+  min-height: 260px;
   max-height: calc(100vh - 110px);
   overflow-y: auto;
   padding-right: 6px;
@@ -474,6 +524,18 @@ a.btn:hover { border-bottom: none; }
   padding: 2px 0;
   margin: 0;
 }
+
+.skeleton {
+  display: inline-block;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--surface-2) 72%, transparent) 25%, color-mix(in oklab, var(--surface-2) 88%, var(--text)) 37%, color-mix(in oklab, var(--surface-2) 72%, transparent) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-pulse 1.25s ease-in-out infinite;
+}
+.skeleton--text { height: 12px; width: 100%; border-radius: 999px; }
+.skeleton--eyebrow { width: 42%; }
+.skeleton--stat { height: 12px; width: 88px; }
+.skeleton--icon { width: 14px; height: 14px; border-radius: 4px; flex: none; }
+.skeleton--rail-line { height: 12px; width: 82%; border-radius: 999px; }
 
 .sidebar__collapse {
   appearance: none;
@@ -523,6 +585,21 @@ a.btn:hover { border-bottom: none; }
   padding-left: 12px;
 }
 .sidebar-rail__label { letter-spacing: 0.08em; }
+
+.sidebar--loading { pointer-events: none; }
+.toc--loading {
+  display: grid;
+  gap: 10px;
+  border-left: 1px solid var(--border-soft);
+  padding: 6px 0 0 14px;
+}
+.toc__skeleton {
+  height: 14px;
+  border-radius: 999px;
+}
+.toc__skeleton--1 { width: 78%; }
+.toc__skeleton--2 { width: 62%; }
+.toc__skeleton--3 { width: 52%; }
 
 @media (max-width: 820px) {
   .sidebar-rail {
@@ -576,6 +653,7 @@ a.btn:hover { border-bottom: none; }
 .rail {
   position: sticky;
   top: 84px;
+  min-height: 220px;
   align-self: start;
   font-family: var(--ui-font);
   display: grid;
@@ -591,6 +669,10 @@ a.btn:hover { border-bottom: none; }
   padding: 4px 0;
 }
 
+.rail--loading { pointer-events: none; }
+.rail__row--loading { align-items: center; }
+.rail__row--wide { width: 78%; }
+
 .rail__row svg { width: 14px; height: 14px; flex: none; }
 
 .rail__divider { height: 1px; background: var(--border-soft); margin: 4px 0; }
@@ -605,6 +687,7 @@ a.btn:hover { border-bottom: none; }
 /* Reader */
 .reader {
   max-width: var(--reader-width);
+  min-height: 420px;
   margin: 0 auto;
   min-width: 0;
   width: 100%;
@@ -648,7 +731,31 @@ a.btn:hover { border-bottom: none; }
   flex-wrap: wrap;
   align-items: center;
   gap: 10px 14px;
+  min-height: 20px;
 }
+.reader__header__stats-row--loading { min-height: 20px; }
+.reader__content {
+  position: relative;
+  min-height: 320px;
+}
+.reader__content--loading .markdown { visibility: hidden; }
+.markdown-skeleton {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  pointer-events: none;
+}
+.markdown-skeleton--hidden { display: none; }
+.markdown-skeleton__line {
+  height: 14px;
+  border-radius: 999px;
+  width: 100%;
+}
+.markdown-skeleton__line--title { height: 22px; width: 60%; margin-bottom: 6px; }
+.markdown-skeleton__line--wide { width: 88%; }
+.markdown-skeleton__line--narrow { width: 48%; }
 
 /* Right rail duplicates these — hide header stats iff rail column shown (same threshold as .rail hide below) */
 @media (width > 1100px) {

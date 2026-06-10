@@ -1,4 +1,4 @@
-import { estimateReadingTime } from '@doclume/core';
+import { estimateReadingTime } from '../../packages/core/src/stats.js';
 
 describe('estimateReadingTime', () => {
   it('counts words and keeps the minimum at one minute', () => {
