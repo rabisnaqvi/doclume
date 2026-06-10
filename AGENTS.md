@@ -1,8 +1,3 @@
-# AGENTS.md
-
-## Purpose
-Repo-wide contract for AI agents. Keep changes maintainable, aligned with repo structure, and consistent with project workflow.
-
 ## Priority
 - User instructions win.
 - Repo policy comes next.

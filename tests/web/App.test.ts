@@ -22,6 +22,8 @@ vi.mock('@doclume/core', async () => {
 
 describe('App', () => {
   let storage: Record<string, string>;
+  let originalWindowLocalStorage: PropertyDescriptor | undefined;
+  let originalGlobalLocalStorage: PropertyDescriptor | undefined;
 
   beforeEach(() => {
     storage = {};
@@ -31,6 +33,9 @@ describe('App', () => {
       removeItem: (key: string) => { delete storage[key]; },
       clear: () => { storage = {}; },
     };
+
+    originalWindowLocalStorage = Object.getOwnPropertyDescriptor(window, 'localStorage');
+    originalGlobalLocalStorage = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
 
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
@@ -54,14 +59,26 @@ describe('App', () => {
       writable: true,
       value: { escape: (value: string) => value.replace(/[^a-zA-Z0-9_-]/g, '\\$&') },
     });
-    Object.defineProperty(window, 'localStorage', { writable: true, value: fakeStorage });
-    Object.defineProperty(globalThis, 'localStorage', { writable: true, value: fakeStorage });
+    Object.defineProperty(window, 'localStorage', { configurable: true, writable: true, value: fakeStorage });
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, writable: true, value: fakeStorage });
 
     fakeStorage.setItem('doclume-prefs-v1', JSON.stringify({ theme: 'manual', sidebarCollapsed: false }));
     fakeStorage.setItem('doclume-last-doc-v1', JSON.stringify({ markdown: '# Hello World', name: 'hello.md' }));
   });
 
   afterEach(() => {
+    if (originalWindowLocalStorage) {
+      Object.defineProperty(window, 'localStorage', originalWindowLocalStorage);
+    } else {
+      Reflect.deleteProperty(window as typeof window & { localStorage?: Storage }, 'localStorage');
+    }
+
+    if (originalGlobalLocalStorage) {
+      Object.defineProperty(globalThis, 'localStorage', originalGlobalLocalStorage);
+    } else {
+      Reflect.deleteProperty(globalThis as typeof globalThis & { localStorage?: Storage }, 'localStorage');
+    }
+
     renderDocument.mockClear();
     document.body.innerHTML = '';
   });
@@ -85,4 +102,52 @@ describe('App', () => {
     expect(host.querySelector('.toc__link')?.textContent).toBe('Hello World');
     expect(host.querySelector('.reader__header__stats-row')?.textContent).toContain('1 min read');
   });
+
+  it('shows a global error workspace when renderDocument rejects', async () => {
+    renderDocument.mockRejectedValueOnce(new Error('boom'));
+
+    const host = document.createElement('div');
+    document.body.append(host);
+
+    await act(async () => {
+      createRoot(host).render(React.createElement(App));
+    });
+
+    await vi.waitFor(() => expect(host.querySelector('.workspace-error')).not.toBeNull());
+    expect(host.querySelector('.reader')).toBeNull();
+    expect(host.querySelector('.reader__header__stats-row')).toBeNull();
+    expect(host.textContent).toContain('Render failed');
+    expect(host.textContent).toContain('Try again');
+  });
+
+  it('retries the current document from the global error workspace', async () => {
+    renderDocument.mockRejectedValueOnce(new Error('boom'));
+
+    const host = document.createElement('div');
+    document.body.append(host);
+
+    await act(async () => {
+      createRoot(host).render(React.createElement(App));
+    });
+
+    await vi.waitFor(() => expect(host.querySelector('.workspace-error')).not.toBeNull());
+
+    const retry = host.querySelector('.workspace-error__retry') as HTMLButtonElement | null;
+    expect(retry).not.toBeNull();
+
+    await act(async () => {
+      retry!.click();
+    });
+
+    await vi.waitFor(() => expect(renderDocument).toHaveBeenCalledTimes(2));
+    renderPending.resolve?.({
+      html: '<h1 id="hello-world">Hello World</h1>',
+      toc: [{ id: 'hello-world', level: 1, text: 'Hello World' }],
+      stats: { words: 2, minutes: 1 },
+    });
+
+    await vi.waitFor(() => expect(host.querySelector('.workspace-error')).toBeNull());
+    await vi.waitFor(() => expect(host.querySelector('.reader__header__stats-row')?.textContent).toContain('1 min read'));
+  });
+
 });

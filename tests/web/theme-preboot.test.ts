@@ -10,6 +10,8 @@ function runPreboot(): void {
 
 describe('theme preboot', () => {
   let storage: Record<string, string>;
+  let originalWindowLocalStorage: PropertyDescriptor | undefined;
+  let originalGlobalLocalStorage: PropertyDescriptor | undefined;
 
   beforeEach(() => {
     storage = {};
@@ -20,9 +22,12 @@ describe('theme preboot', () => {
       clear: () => { storage = {}; },
     };
 
+    originalWindowLocalStorage = Object.getOwnPropertyDescriptor(window, 'localStorage');
+    originalGlobalLocalStorage = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+
     document.documentElement.dataset.theme = 'library';
-    Object.defineProperty(window, 'localStorage', { writable: true, value: fakeStorage });
-    Object.defineProperty(globalThis, 'localStorage', { writable: true, value: fakeStorage });
+    Object.defineProperty(window, 'localStorage', { configurable: true, writable: true, value: fakeStorage });
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, writable: true, value: fakeStorage });
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       value: vi.fn().mockImplementation(() => ({
@@ -32,6 +37,22 @@ describe('theme preboot', () => {
         removeEventListener: vi.fn(),
       })),
     });
+  });
+
+  afterEach(() => {
+    if (originalWindowLocalStorage) {
+      Object.defineProperty(window, 'localStorage', originalWindowLocalStorage);
+    } else {
+      Reflect.deleteProperty(window as typeof window & { localStorage?: Storage }, 'localStorage');
+    }
+
+    if (originalGlobalLocalStorage) {
+      Object.defineProperty(globalThis, 'localStorage', originalGlobalLocalStorage);
+    } else {
+      Reflect.deleteProperty(globalThis as typeof globalThis & { localStorage?: Storage }, 'localStorage');
+    }
+
+    document.documentElement.dataset.theme = 'library';
   });
 
   it('applies saved theme before app boot', () => {

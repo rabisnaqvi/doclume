@@ -433,6 +433,38 @@ function EmptyState({ onOpen, onPaste, onSample }: { onOpen: () => void; onPaste
   );
 }
 
+function RenderErrorState({
+  error,
+  onRetry,
+  onOpen,
+  onPaste,
+}: {
+  error: string | null;
+  onRetry: () => void;
+  onOpen: () => void;
+  onPaste: () => void;
+}) {
+  return (
+    <div className="workspace-error" role="alert" aria-live="polite">
+      <h1 className="workspace-error__title">Render failed</h1>
+      <p className="workspace-error__text">
+        {error ? `${error}` : 'Doclume could not render this document.'}
+      </p>
+      <div className="workspace-error__actions">
+        <button type="button" className="btn btn--primary workspace-error__retry" onClick={onRetry}>
+          Try again
+        </button>
+        <button type="button" className="btn" onClick={onOpen}>
+          Open file
+        </button>
+        <button type="button" className="btn btn--ghost" onClick={onPaste}>
+          Paste markdown
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- Paste modal ---------- */
 
 function PasteModal({ open, onClose, onRender }: { open: boolean; onClose: () => void; onRender: (text: string) => void }) {
@@ -504,7 +536,9 @@ export function App() {
   const [searchCount, setSearchCount] = useState(0);
   const [searchIndex, setSearchIndex] = useState(-1);
   const [renderVersion, bumpRenderVersion] = useReducer((v: number) => v + 1, 0);
-  const [isRendering, setIsRendering] = useState(false);
+  const [renderRetryNonce, bumpRenderRetryNonce] = useReducer((v: number) => v + 1, 0);
+  const [renderStatus, setRenderStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [renderError, setRenderError] = useState<string | null>(null);
   const [renderResult, setRenderResult] = useState<DocumentRenderResult | null>(null);
   const searchMatchesRef = useRef<HTMLElement[]>([]);
   const [activeId, setActiveId] = useState('');
@@ -522,12 +556,14 @@ export function App() {
   useLayoutEffect(() => {
     if (!contentRef.current) return;
     if (!doc.markdown) {
-      setIsRendering(false);
+      setRenderStatus('idle');
+      setRenderError(null);
       setRenderResult(null);
       return;
     }
 
-    setIsRendering(true);
+    setRenderStatus('loading');
+    setRenderError(null);
     setRenderResult(null);
     const themeObj = THEMES.find((t) => t.id === theme) ?? THEMES[0]!;
     const ac = new AbortController();
@@ -537,21 +573,22 @@ export function App() {
       .then((result) => {
         if (ac.signal.aborted || !result) return;
         setRenderResult(result);
+        setRenderStatus('ready');
       })
       .catch((err) => {
         if (ac.signal.aborted) return;
         setRenderResult(null);
+        setRenderStatus('error');
+        setRenderError(err instanceof Error ? err.message : 'Render failed');
         console.error('Doclume: renderDocument failed', err);
-        container.innerHTML = '<p><strong>Render failed.</strong> Check browser console for details.</p>';
       })
       .finally(() => {
         if (ac.signal.aborted) return;
-        setIsRendering(false);
         bumpRenderVersion();
       });
 
     return () => ac.abort();
-  }, [doc.markdown, theme]);
+  }, [doc.markdown, theme, renderRetryNonce]);
 
   useEffect(() => {
     setActiveId('');
@@ -713,14 +750,29 @@ export function App() {
   }, [searchCount]);
 
   const stats = useMemo(() => {
-    const r = renderResult?.stats ?? { words: 0, minutes: 1 };
-    return { ...r, headings: toc.length };
+    if (!renderResult) return null;
+    return { ...renderResult.stats, headings: toc.length };
   }, [renderResult, toc]);
 
   const hasDocument = Boolean(doc.markdown);
-  const isLoading = hasDocument && isRendering;
+  const isLoading = hasDocument && renderStatus === 'loading';
   const showSidebar = !focusMode && (isLoading || (toc.length > 0 && !sidebarCollapsed));
-  const body = hasDocument || isLoading ? (
+  const retryRender = useCallback(() => {
+    if (!doc.markdown) return;
+    setRenderStatus('loading');
+    setRenderError(null);
+    bumpRenderRetryNonce();
+  }, [doc.markdown]);
+  const body = renderStatus === 'error' ? (
+    <div className="workspace workspace--error">
+      <RenderErrorState
+        error={renderError}
+        onRetry={retryRender}
+        onOpen={() => fileInputRef.current?.click()}
+        onPaste={() => setPasteOpen(true)}
+      />
+    </div>
+  ) : hasDocument || isLoading ? (
     <div className={`workspace ${!showSidebar && !isLoading ? 'workspace--no-toc' : ''}`}>
       {showSidebar && (
         <Sidebar
@@ -737,7 +789,7 @@ export function App() {
       )}
       <ReaderPane
         theme={theme}
-        stats={stats}
+        stats={stats ?? undefined}
         docName={doc.name}
         focusMode={focusMode}
         showRail={!focusMode && (showSidebar || isLoading)}

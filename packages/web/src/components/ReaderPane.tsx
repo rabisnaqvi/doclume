@@ -10,7 +10,7 @@ interface Stats {
 
 interface ReaderPaneProps {
   theme: ThemeId;
-  stats: Stats;
+  stats?: Stats;
   docName: string;
   focusMode: boolean;
   showRail: boolean;
@@ -21,7 +21,7 @@ interface ReaderPaneProps {
   contentRef: RefObject<HTMLElement>;
 }
 
-function Rail({ stats, theme, isLoading = false }: { stats: Stats; theme: ThemeId; isLoading?: boolean }) {
+function Rail({ stats, theme, isLoading = false }: { stats?: Stats; theme: ThemeId; isLoading?: boolean }) {
   const themeMeta = THEMES.find((t) => t.id === theme) ?? THEMES[0];
   return (
     <aside className={`rail${isLoading ? ' rail--loading' : ''}`} aria-label="Document info" aria-busy={isLoading || undefined}>
@@ -33,7 +33,7 @@ function Rail({ stats, theme, isLoading = false }: { stats: Stats; theme: ThemeI
           <div className="rail__divider" />
           <div className="rail__row rail__row--loading"><span className="skeleton skeleton--icon" /><span className="skeleton skeleton--rail-line rail__row--wide" /></div>
         </>
-      ) : (
+      ) : stats ? (
         <>
           <div className="rail__row">
             <Icon name="clock" size={14} />
@@ -58,7 +58,7 @@ function Rail({ stats, theme, isLoading = false }: { stats: Stats; theme: ThemeI
             <span>{themeMeta.name}</span>
           </div>
         </>
-      )}
+      ) : null}
     </aside>
   );
 }
@@ -96,13 +96,13 @@ function ReaderPaneImpl({
                   <span className="reader__dot" aria-hidden />
                   <span className="skeleton skeleton--stat" />
                 </>
-              ) : (
+              ) : stats ? (
                 <>
                   <span>{stats.minutes} min read</span>
                   <span className="reader__dot" aria-hidden />
                   <span>{stats.words.toLocaleString()} words</span>
                 </>
-              )}
+              ) : null}
             </div>
           </div>
         )}

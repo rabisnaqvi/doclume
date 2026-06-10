@@ -449,6 +449,49 @@ a.btn:hover { border-bottom: none; }
 
 .workspace--no-toc .reader { width: 100%; }
 
+.workspace--error {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: none;
+  justify-items: center;
+  min-height: calc(100vh - 180px);
+}
+
+.workspace-error {
+  width: min(640px, 100%);
+  margin-top: 28px;
+  display: grid;
+  gap: 16px;
+  padding: 28px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-2);
+  font-family: var(--ui-font);
+}
+
+.workspace-error__title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.workspace-error__text {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.55;
+}
+
+.workspace-error__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.workspace-error__retry {
+  min-width: 110px;
+}
+
 .sidebar {
   position: sticky;
   top: 84px;
